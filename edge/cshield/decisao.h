@@ -85,6 +85,8 @@ struct Decisao {
   bool   ligaVentoinha;    // relé 2 fecha o NA
   bool   novoBloqueio;     // true só no ciclo em que um bloqueio começou (gera evento)
   bool   mudancaIgnorada;  // true quando a trava descartou uma ordem do controlador
+  bool   liberou;          // true no ciclo em que a liberação presencial foi aceita
+  bool   liberacaoRecusada;// true quando o botão foi segurado mas a trava mínima não acabou
   float  taxaCPorMin;      // para a linha do Serial
   float  exposicao;        // °C·min acumulados, para `ex`
   unsigned long travaRestanteMs; // 0 quando a trava mínima já passou
@@ -219,7 +221,11 @@ static inline Decisao avaliar(const Leitura& l, Contexto& ctx, unsigned long ago
   }
 
   // --- 2. Liberação presencial (só depois da trava mínima) ---
+  if (ctx.bloqueado && l.liberacao && (agoraMs - ctx.inicioBloqueioMs) < TRAVA_MS) {
+    d.liberacaoRecusada = true;   // avisa o usuário (Serial e LCD) em vez de falhar em silêncio
+  }
   if (ctx.bloqueado && l.liberacao && (agoraMs - ctx.inicioBloqueioMs) >= TRAVA_MS) {
+    d.liberou = true;
     ctx.bloqueado = false;
     ctx.motivoBloqueio = MT_NENHUM;
     // O histórico de temperatura da janela de 60 s pertence ao episódio que acabou de ser

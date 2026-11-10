@@ -255,6 +255,7 @@ static void teste_liberacao_antes_da_trava() {  // R26, R30
   CHECK(d.estado == ST_BLOQUEIO);
   CHECK(ctx.bloqueado);
   CHECK(d.travaRestanteMs == PASSO);
+  CHECK(d.liberacaoRecusada && !d.liberou);   // o usuário precisa ser avisado
 }
 
 static void teste_liberacao_temperatura_boa() {  // R26
@@ -267,6 +268,7 @@ static void teste_liberacao_temperatura_boa() {  // R26
   CHECK(!ctx.bloqueado);
   CHECK(!d.cortaAquecedor && !d.ligaVentoinha);
   CHECK(d.travaRestanteMs == 0);
+  CHECK(d.liberou && !d.liberacaoRecusada);
 }
 
 static void teste_liberacao_temperatura_ruim() {  // R27, R18
