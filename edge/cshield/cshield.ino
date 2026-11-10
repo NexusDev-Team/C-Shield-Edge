@@ -102,6 +102,13 @@ void loop() {
   aplicarLed(decisao.estado, agora);
   aplicarBuzzer(decisao.estado, agora);
 
+  // A decisão roda a cada 2 s, mas a contagem da trava precisa fluir segundo a segundo na
+  // tela: recalcula o tempo restante a cada volta, só para o LCD (a decisão não muda).
+  if (contexto.bloqueado) {
+    unsigned long decorrido = agora - contexto.inicioBloqueioMs;
+    decisao.travaRestanteMs = decorrido >= TRAVA_MS ? 0 : TRAVA_MS - decorrido;
+  }
+
   // LCD: boot por um instante, barra de liberação enquanto segura o botão, senão o estado.
   if (agora < BOOT_TELA_MS) {
     // mantém a tela de boot
