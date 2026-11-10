@@ -54,7 +54,7 @@ static void aplicarReles(bool cortaAquecedor, bool ligaVentoinha) {
 
 // --- LED RGB (catodo comum, um resistor de 220 ohms por canal) ---
 
-enum CorLed { COR_APAGADO, COR_VERDE, COR_AMARELO, COR_VERMELHO };
+enum CorLed { COR_APAGADO, COR_VERDE, COR_AMARELO, COR_VERMELHO, COR_AZUL };
 
 static int ultimaCorAplicada = -1;   // evita repetir digitalWrite a cada loop()
 
@@ -69,31 +69,32 @@ static void iniciarLedRgb() {
   ultimaCorAplicada = COR_APAGADO;
 }
 
-// Acende a cor pedida. Amarelo = vermelho + verde. O canal azul fica sempre apagado.
+// Acende a cor pedida. Amarelo = vermelho + verde.
 static void aplicarCor(CorLed cor) {
   if ((int)cor == ultimaCorAplicada) return;
   ultimaCorAplicada = cor;
   digitalWrite(PIN_LED_R, (cor == COR_VERMELHO || cor == COR_AMARELO) ? HIGH : LOW);
   digitalWrite(PIN_LED_G, (cor == COR_VERDE || cor == COR_AMARELO) ? HIGH : LOW);
-  digitalWrite(PIN_LED_B, LOW);
+  digitalWrite(PIN_LED_B, (cor == COR_AZUL) ? HIGH : LOW);
 }
 
-// Cor do LED por estado. Função pura (só depende dos argumentos).
-//   NORMAL verde · ATENCAO amarelo fixo · BLOQUEIO vermelho piscando
-//   CRITICO vermelho fixo · FALHA_SENSOR amarelo piscando
-static CorLed corDoEstado(Estado e, unsigned long agoraMs) {
+// Cor do LED. Função pura (só depende dos argumentos).
+//   Bloqueio ativo: AZUL fixo, até alguém liberar (vale também com a temperatura em crítico)
+//   NORMAL verde · ATENCAO amarelo fixo · CRITICO vermelho fixo · FALHA_SENSOR amarelo piscando
+static CorLed corDoLed(const Decisao& d, unsigned long agoraMs) {
+  if (d.bloqueado) return COR_AZUL;
   bool faseAcesa = ((agoraMs / LED_PISCA_MS) % 2) == 0;
-  switch (e) {
+  switch (d.estado) {
     case ST_NORMAL:       return COR_VERDE;
     case ST_ATENCAO:      return COR_AMARELO;
-    case ST_BLOQUEIO:     return faseAcesa ? COR_VERMELHO : COR_APAGADO;
+    case ST_BLOQUEIO:     return COR_AZUL;   // só por segurança: bloqueado já cobre este caso
     case ST_CRITICO:      return COR_VERMELHO;
     case ST_FALHA_SENSOR: return faseAcesa ? COR_AMARELO : COR_APAGADO;
   }
   return COR_APAGADO;
 }
 
-static void aplicarLed(Estado e, unsigned long agoraMs) { aplicarCor(corDoEstado(e, agoraMs)); }
+static void aplicarLed(const Decisao& d, unsigned long agoraMs) { aplicarCor(corDoLed(d, agoraMs)); }
 
 // --- Buzzer ---
 
@@ -101,17 +102,19 @@ static void aplicarLed(Estado e, unsigned long agoraMs) { aplicarCor(corDoEstado
 //   NORMAL        silêncio
 //   ATENCAO       1 bipe curto a cada BUZZER_INTERVALO_MS (10 s)
 //   FALHA_SENSOR  2 bipes curtos a cada BUZZER_INTERVALO_MS
-//   BLOQUEIO      intermitente (liga/desliga a cada BUZZER_INTERM_MS)
-//   CRITICO       contínuo
-static bool buzzerDeveSoar(Estado e, unsigned long agoraMs) {
+//   BLOQUEIO      intermitente (liga/desliga a cada BUZZER_INTERM_MS) enquanto d.alarme
+//   CRITICO       contínuo enquanto d.alarme
+// No bloqueio e no crítico o apito PARA quando a temperatura regulariza (d.alarme falso), mas
+// o bloqueio continua ativo: só a liberação presencial o encerra.
+static bool buzzerDeveSoar(const Decisao& d, unsigned long agoraMs) {
   unsigned long fase = agoraMs % BUZZER_INTERVALO_MS;
-  switch (e) {
+  switch (d.estado) {
     case ST_NORMAL:       return false;
     case ST_ATENCAO:      return fase < BUZZER_BIPE_MS;
     case ST_FALHA_SENSOR: return fase < BUZZER_BIPE_MS ||
                                  (fase >= 2 * BUZZER_BIPE_MS && fase < 3 * BUZZER_BIPE_MS);
-    case ST_BLOQUEIO:     return ((agoraMs / BUZZER_INTERM_MS) % 2) == 0;
-    case ST_CRITICO:      return true;
+    case ST_BLOQUEIO:     return d.alarme && ((agoraMs / BUZZER_INTERM_MS) % 2) == 0;
+    case ST_CRITICO:      return d.alarme;
   }
   return false;
 }
@@ -119,9 +122,9 @@ static bool buzzerDeveSoar(Estado e, unsigned long agoraMs) {
 static void iniciarBuzzer() { pinMode(PIN_BUZZER, OUTPUT); }
 
 // Liga ou desliga o tom só quando o estado do buzzer muda.
-static void aplicarBuzzer(Estado e, unsigned long agoraMs) {
+static void aplicarBuzzer(const Decisao& d, unsigned long agoraMs) {
   static int ligado = -1;
-  int quer = buzzerDeveSoar(e, agoraMs) ? 1 : 0;
+  int quer = buzzerDeveSoar(d, agoraMs) ? 1 : 0;
   if (quer == ligado) return;
   ligado = quer;
   if (quer) tone(PIN_BUZZER, BUZZER_FREQ_HZ); else noTone(PIN_BUZZER);

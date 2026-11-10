@@ -45,13 +45,14 @@ static unsigned long liberadoAteMs = 0;  // até quando o LCD mostra "BLOQUEIO L
 // Imprime uma linha por ciclo de decisão, com os mesmos nomes do payload.
 static void imprimirSerial() {
   char sinal = decisao.taxaCPorMin >= 0 ? '+' : '-';
-  Serial.printf("[%s] t=%.1fC h=%.0f%% l=%.0f%% sp=%.1fC dg=%d taxa=%c%.2fC/min st=%s mt=%s trava=%lus rede=%s\n",
+  Serial.printf("[%s] t=%.1fC h=%.0f%% l=%.0f%% sp=%.1fC dg=%d taxa=%c%.2fC/min st=%s mt=%s trava=%lus apito=%s rede=%s\n",
                 ID_DEVICE, leitura.valida ? leitura.temperatura : SETPOINT_AUSENTE,
                 leitura.umidade, leitura.luzPct,
                 leitura.temSetpoint ? leitura.setpoint : SETPOINT_AUSENTE,
                 leitura.degelo ? 1 : 0, sinal, fabsf(decisao.taxaCPorMin),
                 nomeEstado(decisao.estado), nomeMotivo(decisao.motivo),
-                decisao.travaRestanteMs / 1000UL, redeOk() ? "OK" : "OFF");
+                decisao.travaRestanteMs / 1000UL, decisao.alarme ? "ON" : "OFF",
+                redeOk() ? "OK" : "OFF");
   if (decisao.novoBloqueio)
     Serial.printf("[%s] *** BLOQUEIO (%s): aquecedor cortado, ventoinha ligada ***\n",
                   ID_DEVICE, nomeMotivo(decisao.motivo));
@@ -107,8 +108,8 @@ void loop() {
 
   if (lerSensores(agora, leitura)) cicloDeDecisao(agora);   // a cada 2 s
 
-  aplicarLed(decisao.estado, agora);
-  aplicarBuzzer(decisao.estado, agora);
+  aplicarLed(decisao, agora);
+  aplicarBuzzer(decisao, agora);
 
   // A decisão roda a cada 2 s, mas a contagem da trava precisa fluir segundo a segundo na
   // tela: recalcula o tempo restante a cada volta, só para o LCD (a decisão não muda).
@@ -125,10 +126,8 @@ void loop() {
   } else if (botaoProgressoPct() > 0) {
     if (decisao.travaRestanteMs > 0) mostrarTravaAtiva(decisao.travaRestanteMs);
     else                             mostrarLiberacao(botaoProgressoPct());
-  } else if (contexto.bloqueado && leitura.valida && leitura.temperatura > perfilAtivo().tMax) {
-    mostrarRestaurando();     // bloqueio com temperatura ainda alta: a ventoinha está esfriando
   } else {
-    mostrarEstado(decisao, leitura);
+    mostrarEstado(decisao, leitura, agora);   // "Estado: ..." e a linha 2 alternando
   }
 
   // Só publica depois do primeiro ciclo de decisão (antes disso o payload está vazio).

@@ -42,9 +42,9 @@ Projeto C-Shield · Nexus Vision · GS 2026.2 "CitizenTech". Vídeo no YouTube d
 | Relé 2, contato NA (GPIO 33) | "Liga a ventoinha de emergência no bloqueio." |
 | LEDs laranja e azul | "No simulador mostram o aquecedor cortado e a ventoinha de emergência ligada." |
 | LED verde (ventoinha de refrigeração) | "É a ventoinha normal do controlador. No ataque ela apaga, como se o atacante desligasse o frio, e a de emergência assume." |
-| LED RGB (GPIO 25, 26, 27) | "A cor do estado: verde, amarelo, vermelho." |
-| Buzzer (GPIO 5) | "Um padrão sonoro diferente por estado." |
-| LCD 16x2 I2C (GPIO 21 e 22) | "Mostra o estado e o motivo para quem está na sala." |
+| LED RGB (GPIO 25, 26, 27) | "A cor do estado: verde, amarelo, vermelho. E azul quando há um bloqueio ativo." |
+| Buzzer (GPIO 5) | "Um padrão sonoro diferente por estado. No bloqueio, apita até a temperatura voltar à faixa; o bloqueio continua depois disso." |
+| LCD 16x2 I2C (GPIO 21 e 22) | "Sempre no mesmo molde: Estado e, embaixo, a temperatura, alternando com o motivo e o que fazer." |
 
 ## 3. Os limites e o trecho de `avaliar()` (2:30 a 3:45 · 75 s)
 
@@ -76,13 +76,13 @@ Projeto C-Shield · Nexus Vision · GS 2026.2 "CitizenTech". Vídeo no YouTube d
 
 | Tempo | Ação | O que mostrar e dizer |
 | --- | --- | --- |
-| 4:15 a 4:30 | Ponto de partida | NORMAL: LED verde, LCD `C-Shield NORMAL`, LED laranja (aquecedor) aceso, verde (refrigeração) aceso, azul (emergência) apagado. |
-| 4:30 a 4:45 | Subir o LDR | ATENCAO por porta aberta: LED amarelo, LCD `PORTA ABERTA`, bipe curto. Fechar a porta. |
-| 4:45 a 5:15 | **Mover a chave "Controlador" para ATAQUE** | O ataque. BLOQUEIO imediato: LCD `ATAQUE BLOQUEADO`, LED vermelho piscando, buzzer intermitente, **LED verde apaga** (o atacante desliga a refrigeração), **LED laranja apaga** (aquecedor cortado), **LED azul acende** (ventoinha de emergência). Serial mostra `BLOQUEIO (SETPOINT_INVALIDO)` e o valor recebido. "Sem esperar a temperatura subir." |
+| 4:15 a 4:30 | Ponto de partida | NORMAL: LED verde, LCD `Estado: Ideal` / `Temp: 5.0°C`, LED laranja (aquecedor) aceso, verde (refrigeração) aceso, azul (emergência) apagado. |
+| 4:30 a 4:45 | Subir o LDR | ATENCAO por porta aberta: LED amarelo, LCD `Estado: Atencao` / `Porta aberta`, bipe curto. Fechar a porta. |
+| 4:45 a 5:15 | **Mover a chave "Controlador" para ATAQUE** | O ataque. BLOQUEIO imediato: LCD `Estado: Bloqueio` / `Setpoint 45°C`, **LED RGB azul fixo**, apito por 5 s, **LED verde apaga** (o atacante desliga a refrigeração), **LED laranja apaga** (aquecedor cortado), **LED azul acende** (ventoinha de emergência). Serial mostra `BLOQUEIO (SETPOINT_INVALIDO)` e o valor recebido. "Sem esperar a temperatura subir." |
 | 5:15 a 5:30 | Mexer na chave "Controlador" de novo durante a trava | Serial: `ordem do controlador IGNORADA (trava ativa)`. |
-| 5:30 a 5:45 | Subir o DHT22 além de 9 °C | CRITICO: LED vermelho fixo, buzzer contínuo, LCD `PRODUTO EM RISCO` com a exposição térmica. Voltar o DHT22 a 5 °C. |
-| 5:45 a 6:00 | Desconectar o DHT22 | FALHA_SENSOR: LED amarelo piscando, LCD `FALHA NO SENSOR`, bipe duplo. Reconectar. |
-| 6:00 a 6:15 | Trazer o setpoint de volta, esperar `trava=0s`, **segurar o botão por 3 s** | LCD `LIBERANDO...` com a barra enchendo, depois `BLOQUEIO LIBERADO!` por 3 s; volta a NORMAL. "Só presencial." |
+| 5:30 a 5:45 | Subir o DHT22 além de 9 °C | CRITICO: buzzer contínuo, LCD `Estado: Critico` / `Exposicao ...` (o LED fica azul porque o bloqueio continua ativo). Ao voltar a 5 °C o apito para e o bloqueio continua. Voltar o DHT22 a 5 °C. |
+| 5:45 a 6:00 | Desconectar o DHT22 | FALHA_SENSOR: LED amarelo piscando, LCD `Estado: Falha` / `Sensor sem dado`, bipe duplo. Reconectar. |
+| 6:00 a 6:15 | Trazer o setpoint de volta, esperar `trava=0s`, **segurar o botão por 3 s** | LCD `Liberando...` com a barra enchendo, depois `Estado: Liberado` / `Controle normal` por 3 s; volta a NORMAL e o LED fica verde. "Só presencial." |
 
 Dica de gravação: se a trava de 60 s atrapalhar o ritmo, faça a parte do CRITICO e da falha de sensor enquanto ela corre e libere no final.
 

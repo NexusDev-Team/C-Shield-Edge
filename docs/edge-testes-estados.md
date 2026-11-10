@@ -11,7 +11,7 @@ A lógica de decisão também tem testes automáticos no computador (`edge/test/
 3. Abra o Serial Monitor. A cada 2 s aparece uma linha como
    `[cshield001] t=4.8C h=81% l=12% sp=5.0C dg=0 taxa=+0.02C/min st=NORMAL mt=- trava=0s rede=OK`.
 4. **Ponto de partida (NORMAL):** DHT22 em 5 °C, LDR escuro, botão solto. A chave "Controlador" fica na posição NORMAL (esquerda), e o Serial mostra `sp=5.0C`.
-5. Em NORMAL o LED fica verde, o buzzer em silêncio, os LEDs indicadores mostram aquecedor liberado (laranja) aceso, ventoinha de refrigeração (verde) acesa e ventoinha de emergência (azul) apagada.
+5. Em NORMAL o LED RGB fica verde, o buzzer em silêncio, o LCD mostra `Estado: Ideal` e os LEDs indicadores mostram aquecedor liberado (laranja) aceso, ventoinha de refrigeração (verde) acesa e ventoinha de emergência (azul) apagada. Atenção: "LED RGB" é o LED de status do aparelho; "azul" nos indicadores é a ventoinha de emergência.
 
 ## Tabela de estados
 
@@ -19,19 +19,19 @@ Legenda de relés: "Aquecedor" é o LED laranja no contato NF do relé 1 (aceso 
 
 | Estado | O que mexer no Wokwi | LED RGB | Buzzer | LCD (16x2) | Aquecedor / Ventoinha | Serial | Resultado |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| NORMAL | Ponto de partida acima | Verde fixo | Silêncio | `C-Shield NORMAL` / `5.0C 2a8C` | aceso / apagado | `st=NORMAL mt=-` | |
-| ATENCAO (porta aberta) | Subir o slider de luz do LDR até `l=` passar de 40 no Serial | Amarelo fixo | 1 bipe curto a cada 10 s | `PORTA ABERTA` / temperatura e faixa | aceso / apagado | `st=ATENCAO mt=PORTA_ABERTA` | |
-| ATENCAO (deriva) | Com a porta fechada, DHT22 em 8,5 °C (entre 8 e 9) | Amarelo fixo | 1 bipe curto a cada 10 s | `DERIVA` / `8.5C 2a8C` | aceso / apagado | `st=ATENCAO mt=DERIVA` | |
-| BLOQUEIO (setpoint) | Mover a chave "Controlador" para ATAQUE (`sp=45.0C`) | Vermelho piscando | Intermitente (300 ms) | `ATAQUE BLOQUEADO` / `SETPOINT 45C 58s` | **apagado** / **aceso** | `*** BLOQUEIO (SETPOINT_INVALIDO) ***`, `st=BLOQUEIO`, `trava=` decrescendo | |
-| BLOQUEIO (aquecimento rápido) | Com a porta fechada, subir o DHT22 de 5 °C para cerca de 7 °C em poucos segundos (taxa acima de 0,5 °C/min) | Vermelho piscando | Intermitente | `ATAQUE BLOQUEADO` / `AQUEC RAPIDO 58s` | apagado / aceso | `mt=AQUECIMENTO_RAPIDO`, `taxa=+` alta | |
-| Restauração da temperatura (modelo térmico da demo) | Depois do aquecimento rápido acima, deixar o slider parado em 12 °C | Vermelho piscando (ou fixo, se CRITICO) | Intermitente | `RESTAURANDO TEMP` / `BLOQUEIO ATIVO` enquanto a temperatura está acima de 8 °C; depois volta a `ATAQUE BLOQUEADO` | apagado / aceso | `t=` cai cerca de 6 °C/min até 5.0C, com o slider ainda em 12 | |
-| Aquecimento rápido com porta aberta | Igual ao anterior, mas com o LDR claro | Amarelo fixo | 1 bipe a cada 10 s | `PORTA ABERTA` | aceso / apagado | `st=ATENCAO` (não bloqueia) | |
-| Trava ignora ordem | Durante o BLOQUEIO, mexer na chave "Controlador" de novo (voltar para NORMAL e para ATAQUE) | Vermelho piscando | Intermitente | continua `ATAQUE BLOQUEADO` | apagado / aceso | `ordem do controlador IGNORADA (trava ativa)` | |
-| CRITICO | DHT22 em 10 °C ou mais (acima de 9), ou 0 °C ou menos (abaixo de 1), por 2 ciclos | Vermelho fixo | Contínuo | `PRODUTO EM RISCO` / `T10.0 EX 0.1` | apagado / aceso | `st=CRITICO` | |
-| FALHA_SENSOR | Desconectar o fio de dados do DHT22 (ou apagar a conexão `dht1:SDA` no diagrama), por 2 ciclos | Amarelo piscando | 2 bipes a cada 10 s | `FALHA NO SENSOR` / `DHT22 sem dado` | aceso / apagado | `st=FALHA_SENSOR`, `t=-999.0` | |
-| Liberação com temperatura boa | Em BLOQUEIO, trazer `sp` de volta para 2 a 8 e a temperatura para a faixa; esperar o `trava=0s`; segurar o botão por 3 s | Volta ao verde | Silêncio | `LIBERANDO...` com barra de 16 blocos, depois `BLOQUEIO LIBERADO!` por 3 s, depois `C-Shield NORMAL` | aceso / apagado | `st=NORMAL` | |
-| Liberação antes da trava | Segurar o botão por 3 s com `trava` ainda maior que 0 | Continua piscando | Continua | `LIBERANDO...` e volta a `ATAQUE BLOQUEADO` | apagado / aceso | segue `st=BLOQUEIO` | |
-| Liberação com ordem ainda inválida | Segurar o botão por 3 s depois da trava, com `sp` ainda fora da faixa | Volta a piscar | Intermitente | `ATAQUE BLOQUEADO` | apagado / aceso | novo `*** BLOQUEIO ***`, `bq` sobe | |
+| NORMAL | Ponto de partida acima | Verde fixo | Silêncio | `Estado: Ideal` / `Temp: 5.0°C` | aceso / apagado | `st=NORMAL mt=- apito=OFF` | |
+| ATENCAO (porta aberta) | Subir o slider de luz do LDR até `l=` passar de 40 no Serial | Amarelo fixo | 1 bipe curto a cada 10 s | `Estado: Atencao` / alterna `Temp: 5.0°C` e `Porta aberta` | aceso / apagado | `st=ATENCAO mt=PORTA_ABERTA` | |
+| ATENCAO (deriva) | Com a porta fechada, DHT22 em 8,5 °C (entre 8 e 9) | Amarelo fixo | 1 bipe curto a cada 10 s | `Estado: Atencao` / alterna `Temp: 8.5°C` e `Temp fora faixa` | aceso / apagado | `st=ATENCAO mt=DERIVA` | |
+| BLOQUEIO (setpoint) | Mover a chave "Controlador" para ATAQUE (`sp=45.0C`) | **Azul fixo** | Apito intermitente (300 ms) por 5 s, mesmo com a temperatura boa | `Estado: Bloqueio` / alterna `Temp: 5.0°C`, `Setpoint 45°C` e `Liberar em 58s` | **apagado** / **aceso** | `*** BLOQUEIO (SETPOINT_INVALIDO) ***`, `st=BLOQUEIO`, `trava=` decrescendo, `apito=ON` e depois `OFF` | |
+| BLOQUEIO (aquecimento rápido) | Com a porta fechada, subir o DHT22 de 5 °C para cerca de 7 °C em poucos segundos (taxa acima de 0,5 °C/min) | Azul fixo | Intermitente enquanto a temperatura passa de 8 °C (e 5 s no começo) | `Estado: Bloqueio` / alterna temperatura, `Aquec. rapido` e `Liberar em 58s` | apagado / aceso | `mt=AQUECIMENTO_RAPIDO`, `taxa=+` alta | |
+| Restauração da temperatura (modelo térmico da demo) | Depois do aquecimento rápido acima, deixar o slider parado em 12 °C | Azul fixo (também em CRITICO com bloqueio) | Apita enquanto a temperatura está fora da faixa; **para quando ela volta a 2 a 8 °C, e o bloqueio continua** | alterna `Temp: …`, o motivo, `Restaurando temp` enquanto passa de 8 °C e `Liberar em …` | apagado / aceso | `t=` cai cerca de 6 °C/min até 5.0C; `apito=OFF` ao regularizar e `st=BLOQUEIO` continua | |
+| Aquecimento rápido com porta aberta | Igual ao anterior, mas com o LDR claro | Amarelo fixo | 1 bipe a cada 10 s | `Estado: Atencao` / `Porta aberta` | aceso / apagado | `st=ATENCAO` (não bloqueia) | |
+| Trava ignora ordem | Durante o BLOQUEIO, mexer na chave "Controlador" de novo (voltar para NORMAL e para ATAQUE) | Azul fixo | Conforme a temperatura | continua `Estado: Bloqueio` | apagado / aceso | `ordem do controlador IGNORADA (trava ativa)` | |
+| CRITICO | DHT22 em 10 °C ou mais (acima de 9), ou 0 °C ou menos (abaixo de 1), por 2 ciclos | Vermelho fixo (azul se já havia bloqueio) | Contínuo enquanto a temperatura estiver fora da faixa | `Estado: Critico` / alterna `Temp: 10.0°C`, `Exposicao 0.1` (e `Bloqueio ativo`) | apagado / aceso | `st=CRITICO` | |
+| FALHA_SENSOR | Desconectar o fio de dados do DHT22 (ou apagar a conexão `dht1:SDA` no diagrama), por 2 ciclos | Amarelo piscando | 2 bipes a cada 10 s | `Estado: Falha` / `Sensor sem dado` | aceso / apagado | `st=FALHA_SENSOR`, `t=-999.0` | |
+| Liberação com temperatura boa | Em BLOQUEIO, trazer `sp` de volta para 2 a 8 e a temperatura para a faixa; esperar o `trava=0s`; segurar o botão por 3 s | Volta ao verde | Silêncio | `Liberando...` com barra de 16 blocos, depois `Estado: Liberado` / `Controle normal` por 3 s, depois `Estado: Ideal` | aceso / apagado | `st=NORMAL` | |
+| Liberação antes da trava | Segurar o botão por 3 s com `trava` ainda maior que 0 | Continua azul | Conforme a temperatura | `Trava ativa` / `Aguarde 45s`, depois volta a `Estado: Bloqueio` | apagado / aceso | segue `st=BLOQUEIO` | |
+| Liberação com ordem ainda inválida | Segurar o botão por 3 s depois da trava, com `sp` ainda fora da faixa | Volta a azul | Apito inicial de 5 s | `Estado: Bloqueio` | apagado / aceso | novo `*** BLOQUEIO ***`, `bq` sobe | |
 | Offline | Desligar o Wi-Fi (ou usar um `BROKER_MQTT` inválido) | Mesmas respostas locais | Iguais | Iguais | Iguais | `rede=OFF`, decisões iguais | |
 
 Observações para a gravação:
