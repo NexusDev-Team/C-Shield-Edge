@@ -17,7 +17,7 @@
 
     { "type": "wokwi-lcd1602", "id": "lcd1", "top": -330, "left": 340, "attrs": { "pins": "i2c" } },
 
-    { "type": "wokwi-potentiometer", "id": "pot1", "top": 10, "left": 220, "attrs": { "label": "Setpoint do controlador" } },
+    { "type": "wokwi-potentiometer", "id": "pot1", "top": 10, "left": 220, "attrs": { "label": "Setpoint do controlador", "value": "398" } },
     { "type": "wokwi-slide-switch", "id": "sw1", "top": 110, "left": 230, "attrs": { "label": "Degelo do controlador" } },
     { "type": "wokwi-pushbutton", "id": "btn1", "top": 170, "left": 230, "attrs": { "color": "green", "label": "Liberar (3 s)" } },
 
