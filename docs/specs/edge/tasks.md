@@ -28,27 +28,27 @@ Regras de execução: execução direta e auto-revisada (decisão V3 do plano); 
 
 | Tarefa | Entrega | Requisitos | Status |
 | --- | --- | --- | --- |
-| T9 | `sensores.h`: DHT22, validação, média, LDR, chaves e botão com debounce compartilhado | R6 a R10 | Pendente |
-| T10 | `atuadores.h`: relés em repouso no boot, LED RGB e buzzer por estado, sem `delay()` | R1, R32, R33 | Pendente |
-| T11 | `painel.h`: telas do LCD | R34 a R36 | Pendente |
-| T12 | `simulacao.h`: modelo térmico da demo | R48 | Pendente |
-| T13 | `rede.h`: payload novo e `minutoDoDia`; sem `subscribe` | R2 a R4, R39, R40 | Pendente |
-| T14 | `cshield.ino`: orquestra, Serial por ciclo e de evento | R37, R38, R45 | Pendente |
+| T9 | `sensores.h`: DHT22, validação, média, LDR, chaves e botão com debounce compartilhado | R6 a R10 | Concluída |
+| T10 | `atuadores.h`: relés em repouso no boot, LED RGB e buzzer por estado, sem `delay()` | R1, R32, R33 | Concluída |
+| T11 | `painel.h`: telas do LCD | R34 a R36 | Concluída |
+| T12 | `simulacao.h`: modelo térmico da demo | R48 | Concluída |
+| T13 | `rede.h`: payload novo e `minutoDoDia`; sem `subscribe` | R2 a R4, R39, R40 | Concluída |
+| T14 | `cshield.ino`: orquestra, Serial por ciclo e de evento | R37, R38, R45 | Concluída |
 
 ## Fase D — Wokwi e FIWARE
 
 | Tarefa | Entrega | Requisitos | Status |
 | --- | --- | --- | --- |
-| T15 | `diagram.json`: chaves do controlador, relés, LEDs indicadores, LCD | R47 | Pendente |
-| T16 | `libraries.txt` conferido | — | Pendente |
-| T17 | `provisionar.sh` com os atributos novos | R41, R42 | Pendente |
-| T18 | Teste ponta a ponta (ou o passo a passo, se a EC2 estiver fora) | R43 | Pendente |
+| T15 | `diagram.json`: chaves do controlador, relés, LEDs indicadores, LCD | R47 | Concluída |
+| T16 | `libraries.txt` conferido | — | Concluída |
+| T17 | `provisionar.sh` com os atributos novos | R41, R42 | Concluída |
+| T18 | Teste ponta a ponta (ou o passo a passo, se a EC2 estiver fora) | R43 | Passo a passo escrito; EC2 fora do ar em 10/11, não executado |
 
 ## Fase E — Documentação
 
 | Tarefa | Entrega | Status |
 | --- | --- | --- |
-| T19 | `docs/edge-testes-estados.md` | Pendente |
+| T19 | `docs/edge-testes-estados.md` | Concluída |
 | T20 | `docs/edge-roteiro-video.md` | Pendente |
 | T21 | `README.md` | Pendente |
 
