@@ -24,6 +24,7 @@
  *   CRITICO       "PRODUTO EM RISCO" / temperatura e exposição
  *   FALHA_SENSOR  "FALHA NO SENSOR" / "DHT22 sem dado"
  *   Liberando     "LIBERANDO..." / barra de progresso de 16 blocos
+ *   Restaurando   "RESTAURANDO TEMP" / "BLOQUEIO ATIVO" (bloqueio com temperatura alta)
  *   Liberado      "BLOQUEIO" / "LIBERADO!" (por LIBERADO_TELA_MS após a liberação)
  */
 #ifndef PAINEL_H
@@ -131,6 +132,13 @@ static void mostrarTravaAtiva(unsigned long travaRestanteMs) {
   else          snprintf(l2, sizeof(l2), "AGUARDE %lus", s);
   escreverLinha(0, "TRAVA ATIVA");
   escreverLinha(1, l2);
+}
+
+// Bloqueio ativo com a temperatura ainda acima da faixa: a ventoinha de emergência está
+// trazendo a temperatura de volta.
+static void mostrarRestaurando() {
+  escreverLinha(0, "RESTAURANDO TEMP");
+  escreverLinha(1, "BLOQUEIO ATIVO");
 }
 
 // Confirmação mostrada logo depois de a liberação presencial ser aceita.

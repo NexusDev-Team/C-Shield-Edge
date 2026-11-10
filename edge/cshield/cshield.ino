@@ -33,6 +33,7 @@
 #include "atuadores.h"
 #include "painel.h"
 #include "rede.h"
+#include "simulacao.h"
 
 static Leitura  leitura;      // última leitura montada
 static Contexto contexto;     // memória da decisão entre ciclos
@@ -69,6 +70,10 @@ static void cicloDeDecisao(unsigned long agora) {
   leitura.horaValida = horaAtual(hora);
   leitura.hora = hora;
   leitura.liberacao = botaoConsumirLiberacao();
+
+  // Só na demonstração: a ventoinha de emergência (da decisão anterior) esfria a temperatura.
+  if (leitura.valida)
+    leitura.temperatura = modeloTermicoDemo(leitura.temperatura, decisao.ligaVentoinha, agora);
 
   decisao = avaliar(leitura, contexto, agora);
   aplicarReles(decisao.cortaAquecedor, decisao.ligaVentoinha);
@@ -120,6 +125,8 @@ void loop() {
   } else if (botaoProgressoPct() > 0) {
     if (decisao.travaRestanteMs > 0) mostrarTravaAtiva(decisao.travaRestanteMs);
     else                             mostrarLiberacao(botaoProgressoPct());
+  } else if (contexto.bloqueado && leitura.valida && leitura.temperatura > perfilAtivo().tMax) {
+    mostrarRestaurando();     // bloqueio com temperatura ainda alta: a ventoinha está esfriando
   } else {
     mostrarEstado(decisao, leitura);
   }

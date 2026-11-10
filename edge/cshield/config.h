@@ -36,6 +36,10 @@ static const char* const NOME_PRODUTO = "C-Shield";
 // Mude para 0 na versão "de produção".
 #define MODO_DEMO 1
 
+// 1 = modelo térmico de demonstração (simulacao.h): no Wokwi o DHT22 é um slider manual,
+// então a ventoinha de emergência "esfria" a temperatura por software. Use 0 na maquete.
+#define MODELO_TERMICO_DEMO 1
+
 // 1 no Wokwi (uma chave de 2 posições representa o setpoint que o controlador manda:
 // NORMAL ou ATAQUE); 0 na maquete física, onde não há chave e o setpoint fica ausente.
 #define TEM_POT_SETPOINT 1
@@ -164,6 +168,18 @@ const unsigned long LIBERACAO_MS = 3000;
 
 // Debounce do botão: ignora contatos que oscilam por menos de 50 ms.
 const unsigned long DEBOUNCE_MS = 50;
+
+// ---------------------------------------------------------------------------
+// Modelo térmico da demonstração (simulacao.h)
+// ---------------------------------------------------------------------------
+
+// Velocidade com que a ventoinha de emergência baixa a temperatura na simulação. 6 °C/min
+// leva de 12 °C ao centro da faixa em cerca de 1 min, cabendo no vídeo.
+const float RESFRIAMENTO_DEMO_C_POR_MIN = 6.0f;
+
+// Variação do sensor acima da qual o modelo entende que a pessoa mexeu no slider. Fica acima
+// do ruído do DHT22 (cerca de 0,1 a 0,2 °C).
+const float MODELO_MUDANCA_C = 0.3f;
 
 // ---------------------------------------------------------------------------
 // Setpoint observado (chave de 2 posições do Wokwi)

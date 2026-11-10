@@ -13,6 +13,7 @@ Pasta do firmware: `edge/cshield/` (a pasta e o `cshield.ino` têm o mesmo nome,
 | `sensores.h` | Leitura do DHT22, LDR, chave NORMAL/ATAQUE e GPIO 18; validação; média móvel; monta a `Leitura` | Sim | R6 a R13 |
 | `atuadores.h` | Relés (estado seguro no boot), LED RGB por estado, padrões do buzzer com `millis()` | Sim | R1, R5, R17, R18, R44 |
 | `painel.h` | Telas do LCD 16x2 I2C; só reescreve quando o conteúdo muda | Sim | R43, R42 |
+| `simulacao.h` | Modelo térmico só da demo no Wokwi: a ventoinha de emergência esfria a temperatura vista pela decisão (`MODELO_TERMICO_DEMO`); desligado na maquete | Não | (demo) |
 | `rede.h` | Wi-Fi, NTP (hora), MQTT **somente publish**, reconexão a cada 10 s, monta o payload | Sim | R2, R3, R4, R33 a R36 |
 | `cshield.ino` | `setup()` e `loop()`: só orquestra e imprime a linha do Serial | Sim | R1, R39, R44, R45 |
 | `test/test_decisao.cpp` | Um teste por requisito de decisão | Não | R14 a R32 |
