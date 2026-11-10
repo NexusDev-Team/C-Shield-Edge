@@ -24,7 +24,7 @@
     { "type": "wokwi-relay-module", "id": "rele2", "top": 10, "left": 450, "attrs": { "label": "Rele 2 - ventoinha (NA)" } },
 
     { "type": "wokwi-resistor", "id": "r_aq", "top": 130, "left": 345, "rotate": 90, "attrs": { "value": "220" } },
-    { "type": "wokwi-led", "id": "led_aq", "top": 170, "left": 345, "attrs": { "color": "orange", "label": "Aquecedor" } },
+    { "type": "wokwi-led", "id": "led_aq", "top": 170, "left": 345, "attrs": { "color": "orange", "label": "Aquecedor liberado" } },
     { "type": "wokwi-resistor", "id": "r_vt", "top": 130, "left": 465, "rotate": 90, "attrs": { "value": "220" } },
     { "type": "wokwi-led", "id": "led_vt", "top": 170, "left": 465, "attrs": { "color": "blue", "label": "Ventoinha" } }
   ],
