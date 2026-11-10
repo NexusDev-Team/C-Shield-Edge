@@ -81,7 +81,7 @@ Regras de execução: execução direta e auto-revisada (decisão V3 do plano); 
 
 ## Registro da revisão final (plano §4)
 
-- A lógica de decisão foi dividida em `decisao_tipos.h`, `decisao_regras.h` e `decisao.h`, para nenhum arquivo passar de ~250 linhas.
+- A lógica de decisão chegou a ser dividida em três arquivos, mas voltou a um único `decisao.h` (cerca de 360 linhas): três abas no Wokwi causaram erro de colagem e conflito de `#ifndef`.
 - `liberar()` recebe também `agoraMs`, porque ao liberar registra a amostra de temperatura atual no histórico da taxa.
 - Ao liberar, a contagem do tempo do aquecedor recomeça do zero: se o controlador ainda estiver mandando o degelo, o bloqueio só reabre depois de nova duração máxima.
 - Foram adicionados stubs em `edge/test/stubs/` para checar a sintaxe do firmware inteiro (`g++ -fsyntax-only`) sem o `arduino-cli`.

@@ -27,8 +27,152 @@
 #define DECISAO_H
 
 #include "config.h"
-#include "decisao_tipos.h"
-#include "decisao_regras.h"
+
+// Prioridade, da mais alta para a mais baixa: CRITICO > BLOQUEIO > FALHA_SENSOR > ATENCAO > NORMAL.
+enum Estado { ST_NORMAL, ST_ATENCAO, ST_BLOQUEIO, ST_CRITICO, ST_FALHA_SENSOR };
+
+enum Motivo {
+  MT_NENHUM, MT_PORTA_ABERTA, MT_DERIVA, MT_DEGELO, MT_DEGELO_FORCADO, MT_AQUECEDOR_LONGO,
+  MT_SUBIDA_RAPIDA, MT_TEMP_FORA_TOLERANCIA, MT_SENSOR_SEM_LEITURA
+};
+
+// Entrada de um ciclo de decisão (montada por sensores.h; nos testes, preenchida à mão).
+struct Leitura {
+  bool  valida;        // o DHT22 devolveu valor utilizável neste ciclo
+  float temperatura;   // °C, já suavizada pela média móvel (só vale se valida)
+  float umidade;       // %
+  float luzPct;        // % do LDR (independe do DHT22)
+  bool  aquecedorCmd;  // o controlador está mandando ligar o aquecedor/degelo
+  bool  ventoinhaCmd;  // o controlador está mandando ligar a ventoinha/compressor
+  bool  horaValida;    // hora do NTP disponível
+  int   minutoDoDia;   // 0..1439, só vale se horaValida
+  bool  liberacao;     // botão segurado por LIBERACAO_MS (calculado em sensores.h)
+};
+
+// Memória entre ciclos. Zere com iniciarContexto().
+struct Contexto {
+  bool          iniciado;          // já houve um ciclo (para calcular o intervalo)
+  unsigned long ultimoMs;          // instante do ciclo anterior
+  bool          bloqueado;         // condição persistente de bloqueio (não expira)
+  Motivo        motivoBloqueio;
+  bool          aquecedorAtivo;    // o aquecedor está comandado desde inicioAquecedorMs
+  unsigned long inicioAquecedorMs;
+  bool          termostatoLigado;  // ventoinha do C-Shield (relé 2) durante bloqueio/crítico
+  int           bloqueios;         // contador publicado em `bq`
+  int           ignorados;         // comandos do controlador ignorados, publicado em `ci`
+  float         exposicao;         // °C·min acumulados acima de T_MAX (`ex`)
+  int           contCritico;       // ciclos seguidos além da tolerância
+  int           contInvalido;      // ciclos seguidos com sensor inválido
+  float         histTemp[N_AMOSTRAS_TAXA];       // histórico da janela da taxa
+  unsigned long histMs[N_AMOSTRAS_TAXA];
+  int           histN;
+  bool          ultimoAq;          // comandos do ciclo anterior, para detectar mudança
+  bool          ultimoVt;
+};
+
+// Saída de um ciclo de decisão.
+struct Decisao {
+  Estado estado;
+  Motivo motivo;
+  bool   cortarAquecedor;     // relé 1 aciona: abre o NF e corta o aquecedor
+  bool   ligarVentoinha;      // relé 2 aciona: o C-Shield liga a ventoinha direto
+  bool   novoBloqueio;        // true só no ciclo em que um bloqueio começou (gera evento)
+  bool   mudancaIgnorada;     // true quando o bloqueio descartou uma mudança do controlador
+  bool   liberou;            // true no ciclo em que a liberação presencial foi aceita
+  bool   liberacaoRecusada;  // true quando o botão foi segurado mas a temperatura está fora da faixa
+  float  taxaCPorMin;         // para a linha do Serial
+  float  exposicao;           // °C·min acumulados, para `ex`
+  unsigned long degeloRestanteMs;   // contagem do degelo legítimo (0 fora dele)
+  unsigned long aquecedorLigadoMs;  // há quanto tempo o aquecedor está comandado (linha de evento)
+};
+
+// ---------------------------------------------------------------------------
+// Funções auxiliares (puras)
+// ---------------------------------------------------------------------------
+
+static inline Perfil perfilAtivo() { return PERFIS[PERFIL_ATIVO]; }
+
+// true se a temperatura é utilizável: não é NaN e está na faixa física do DHT22.
+static inline bool temperaturaValida(float t) {
+  if (t != t) return false;  // NaN é o único valor diferente de si mesmo
+  return t >= DHT_TEMP_MIN_FISICA && t <= DHT_TEMP_MAX_FISICA;
+}
+
+static inline bool portaAberta(float luzPct) { return luzPct > LIMIAR_PORTA_PCT; }
+
+static inline bool dentroDaJanela(int minuto, int horaInicio) {
+  return minuto >= horaInicio * 60 && minuto < horaInicio * 60 + JANELA_DEGELO_MIN;
+}
+
+// true se um degelo é permitido agora: no modo demonstração e sem hora válida, sempre (vale só
+// a duração); em produção, só nas janelas das 6h e das 18h.
+static inline bool degeloNoHorario(const Leitura& l) {
+#if MODO_DEMO
+  (void)l;
+  return true;
+#else
+  if (!l.horaValida) return true;
+  return dentroDaJanela(l.minutoDoDia, HORA_DEGELO_1) || dentroDaJanela(l.minutoDoDia, HORA_DEGELO_2);
+#endif
+}
+
+// Ventoinha de fato ligada: a do controlador OU a do C-Shield. Nunca menor que a comandada.
+static inline bool ventoinhaEfetiva(const Decisao& d, const Leitura& l) {
+  return d.ligarVentoinha || l.ventoinhaCmd;
+}
+
+static inline const char* nomeEstado(Estado e) {
+  switch (e) {
+    case ST_NORMAL:       return "NORMAL";
+    case ST_ATENCAO:      return "ATENCAO";
+    case ST_BLOQUEIO:     return "BLOQUEIO";
+    case ST_CRITICO:      return "CRITICO";
+    case ST_FALHA_SENSOR: return "FALHA_SENSOR";
+  }
+  return "?";
+}
+
+static inline const char* nomeMotivo(Motivo m) {
+  switch (m) {
+    case MT_NENHUM:                return "-";
+    case MT_PORTA_ABERTA:          return "PORTA_ABERTA";
+    case MT_DERIVA:                return "DERIVA";
+    case MT_DEGELO:                return "DEGELO";
+    case MT_DEGELO_FORCADO:        return "DEGELO_FORCADO";
+    case MT_AQUECEDOR_LONGO:       return "AQUECEDOR_LONGO";
+    case MT_SUBIDA_RAPIDA:         return "SUBIDA_RAPIDA";
+    case MT_TEMP_FORA_TOLERANCIA:  return "TEMP_FORA_TOLERANCIA";
+    case MT_SENSOR_SEM_LEITURA:    return "SENSOR_SEM_LEITURA";
+  }
+  return "?";
+}
+
+static inline void iniciarContexto(Contexto& ctx) { ctx = Contexto(); }
+
+// Guarda a temperatura no histórico e descarta o que saiu da janela de JANELA_TAXA_MS.
+static inline void registrarAmostra(Contexto& ctx, float temp, unsigned long agoraMs) {
+  if (ctx.histN >= N_AMOSTRAS_TAXA) {            // cheio: descarta a mais antiga
+    for (int i = 1; i < ctx.histN; i++) { ctx.histTemp[i - 1] = ctx.histTemp[i]; ctx.histMs[i - 1] = ctx.histMs[i]; }
+    ctx.histN--;
+  }
+  ctx.histTemp[ctx.histN] = temp;
+  ctx.histMs[ctx.histN] = agoraMs;
+  ctx.histN++;
+  // Remove amostras mais velhas que a janela, sempre mantendo ao menos a mais nova.
+  while (ctx.histN > 1 && agoraMs - ctx.histMs[0] > JANELA_TAXA_MS) {
+    for (int i = 1; i < ctx.histN; i++) { ctx.histTemp[i - 1] = ctx.histTemp[i]; ctx.histMs[i - 1] = ctx.histMs[i]; }
+    ctx.histN--;
+  }
+}
+
+// Taxa de variação da temperatura em °C/min (positiva = aquecendo), entre a amostra mais
+// antiga e a mais nova da janela. 0 se ainda não há intervalo suficiente.
+static inline float calcularTaxa(const Contexto& ctx) {
+  if (ctx.histN < 2) return 0.0f;
+  unsigned long dt = ctx.histMs[ctx.histN - 1] - ctx.histMs[0];
+  if (dt < TAXA_MIN_INTERVALO_MS) return 0.0f;
+  return (ctx.histTemp[ctx.histN - 1] - ctx.histTemp[0]) / ((float)dt / 60000.0f);
+}
 
 // ---------------------------------------------------------------------------
 // Liberação e decisão
