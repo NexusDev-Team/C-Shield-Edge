@@ -9,7 +9,7 @@ Projeto C-Shield · Nexus Vision · GS 2026.2 "CitizenTech". Vídeo no YouTube d
 - [ ] Abrir o site da GS na rota `/ao-vivo` e confirmar que ele responde.
 - [ ] Abrir o Wokwi, iniciar a simulação e conferir no Serial `rede=OK`.
 - [ ] **Lembrete: o Wokwi só publica enquanto a aba do navegador estiver aberta e a simulação ativa.** Não minimize nem feche a aba durante a gravação.
-- [ ] Deixar o ponto de partida: DHT22 em 5 °C, LDR escuro, chave de degelo desligada, `sp=` entre 2 e 8 no Serial, estado NORMAL.
+- [ ] Deixar o ponto de partida: DHT22 em 5 °C, LDR escuro, `sp=` entre 2 e 8 no Serial, estado NORMAL.
 - [ ] Conferir o relógio local: se for entre 6h e 7h ou entre 18h e 19h, o degelo não bloqueia na hora (ver `docs/edge-testes-estados.md`).
 - [ ] Ter abertas, em abas separadas: o Wokwi, o `decisao.h` (função `avaliar`), o `rede.h`, o terminal com o `curl` do Orion e o site `/ao-vivo`.
 
@@ -37,7 +37,6 @@ Projeto C-Shield · Nexus Vision · GS 2026.2 "CitizenTech". Vídeo no YouTube d
 | DHT22 (GPIO 4) | "Mede temperatura e umidade próprias, independentes do controlador, que é justamente o que pode mentir." |
 | LDR (GPIO 34) | "Detecta porta aberta pela luz. Porta aberta justifica o calor e muda a resposta." |
 | Chave "Controlador" NORMAL/ATAQUE (GPIO 32) | "No simulador, representa o que o controlador comercial está mandando. Em ATAQUE, ele manda um setpoint perigoso. É o nosso 'ataque'." |
-| Chave deslizante (GPIO 18) | "Representa o degelo comandado pelo controlador. Degelo fora de hora ou longo demais é suspeito." |
 | Botão (GPIO 19) | "A única forma de liberar um bloqueio, e só presencial: segurar por 3 segundos." |
 | Relé 1, contato NF (GPIO 23) | "Fica entre o controlador e o aquecedor. Energizado, abre o circuito e corta o aquecimento. Desenergizado, fica fechado: se o C-Shield falhar, o equipamento funciona como antes." |
 | Relé 2, contato NA (GPIO 33) | "Liga a ventoinha de emergência no bloqueio." |
@@ -72,7 +71,7 @@ Projeto C-Shield · Nexus Vision · GS 2026.2 "CitizenTech". Vídeo no YouTube d
 
 ## 5. A simulação passando por todos os estados (4:15 a 6:15 · 120 s)
 
-**Na tela:** o Wokwi com o Serial Monitor visível, o LCD, o LED RGB e os dois LEDs indicadores em quadro. O "ataque" é **mover a chave "Controlador" para ATAQUE** ou **ligar a chave do degelo**; os LEDs laranja e azul mostram o aquecedor cortado e a ventoinha ligada.
+**Na tela:** o Wokwi com o Serial Monitor visível, o LCD, o LED RGB e os dois LEDs indicadores em quadro. O "ataque" é **mover a chave "Controlador" para ATAQUE**; os LEDs laranja e azul mostram o aquecedor cortado e a ventoinha ligada.
 
 | Tempo | Ação | O que mostrar e dizer |
 | --- | --- | --- |

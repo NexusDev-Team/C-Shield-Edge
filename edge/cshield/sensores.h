@@ -108,7 +108,9 @@ static bool botaoConsumirLiberacao() {
 // Liga os sensores e as entradas. O botão usa o pull-up interno.
 static void iniciarSensores() {
   dht.begin();
-  pinMode(PIN_DEGELO, INPUT);
+  // Sem chave no Wokwi o GPIO 18 fica solto; o pull-down o mantém em LOW (sem degelo)
+  // em vez de ler ruído e gerar um bloqueio fantasma.
+  pinMode(PIN_DEGELO, INPUT_PULLDOWN);
   pinMode(PIN_CHAVE_SP, INPUT);
   pinMode(PIN_BOTAO, INPUT_PULLUP);
 }

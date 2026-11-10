@@ -18,7 +18,6 @@
     { "type": "wokwi-lcd1602", "id": "lcd1", "top": -330, "left": 340, "attrs": { "pins": "i2c" } },
 
     { "type": "wokwi-slide-switch", "id": "sw2", "top": 40, "left": 230, "attrs": { "label": "Controlador: esquerda NORMAL / direita ATAQUE" } },
-    { "type": "wokwi-slide-switch", "id": "sw1", "top": 110, "left": 230, "attrs": { "label": "Degelo do controlador" } },
     { "type": "wokwi-pushbutton", "id": "btn1", "top": 170, "left": 230, "attrs": { "color": "green", "label": "Liberar (3 s)" } },
 
     { "type": "wokwi-relay-module", "id": "rele1", "top": 10, "left": 330, "attrs": { "label": "Rele 1 - corta aquecedor (NF)" } },
@@ -49,10 +48,6 @@
     [ "sw2:2", "esp:D32", "green", [ "v0" ] ],
     [ "sw2:1", "bb1:tn.12", "black", [ "v0" ] ],
     [ "sw2:3", "bb1:tp.12", "red", [ "v0" ] ],
-
-    [ "sw1:2", "esp:D18", "green", [ "v0" ] ],
-    [ "sw1:1", "bb1:tn.14", "black", [ "v0" ] ],
-    [ "sw1:3", "bb1:tp.14", "red", [ "v0" ] ],
 
     [ "btn1:1.l", "esp:D19", "green", [ "v0" ] ],
     [ "btn1:2.l", "bb1:tn.16", "black", [ "v0" ] ],

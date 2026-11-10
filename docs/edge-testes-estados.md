@@ -2,7 +2,7 @@
 
 Projeto C-Shield · Nexus Vision · GS 2026.2 "CitizenTech". Este roteiro serve para a equipe validar cada estado no simulador antes de gravar o vídeo, e para o teste ponta a ponta com o FIWARE (T18b).
 
-A lógica de decisão também tem testes automáticos no computador (`edge/test/test_decisao.cpp`), com um caso por requisito. Esta tabela confere o conjunto completo no Wokwi, com LED, buzzer, LCD, relés e Serial.
+A lógica de decisão também tem testes automáticos no computador (`edge/test/test_decisao.cpp`), com um caso por requisito. Esta tabela confere o conjunto completo no Wokwi, com LED, buzzer, LCD, relés e Serial. As regras de degelo (fora de horário e longo demais) não têm chave no Wokwi: ficam cobertas só pelos testes automáticos do computador. O GPIO 18 existe para o fio do controlador na maquete.
 
 ## Antes de começar
 
@@ -10,7 +10,7 @@ A lógica de decisão também tem testes automáticos no computador (`edge/test/
 2. Perfil ativo: vacina (+2 a +8 °C, tolerância 1 °C). Modo demonstração ligado (`MODO_DEMO 1`): a trava mínima do bloqueio é de 60 s.
 3. Abra o Serial Monitor. A cada 2 s aparece uma linha como
    `[cshield001] t=4.8C h=81% l=12% sp=5.0C dg=0 taxa=+0.02C/min st=NORMAL mt=- trava=0s rede=OK`.
-4. **Ponto de partida (NORMAL):** DHT22 em 5 °C, LDR escuro, chave de degelo desligada, botão solto. A chave "Controlador" fica na posição NORMAL (esquerda), e o Serial mostra `sp=5.0C`.
+4. **Ponto de partida (NORMAL):** DHT22 em 5 °C, LDR escuro, botão solto. A chave "Controlador" fica na posição NORMAL (esquerda), e o Serial mostra `sp=5.0C`.
 5. Em NORMAL o LED fica verde, o buzzer em silêncio, os dois LEDs indicadores mostram aquecedor (laranja) aceso e ventoinha (azul) apagada.
 
 ## Tabela de estados
@@ -23,7 +23,6 @@ Legenda de relés: "Aquecedor" é o LED laranja no contato NF do relé 1 (aceso 
 | ATENCAO (porta aberta) | Subir o slider de luz do LDR até `l=` passar de 40 no Serial | Amarelo fixo | 1 bipe curto a cada 10 s | `PORTA ABERTA` / temperatura e faixa | aceso / apagado | `st=ATENCAO mt=PORTA_ABERTA` | |
 | ATENCAO (deriva) | Com a porta fechada, DHT22 em 8,5 °C (entre 8 e 9) | Amarelo fixo | 1 bipe curto a cada 10 s | `DERIVA` / `8.5C 2a8C` | aceso / apagado | `st=ATENCAO mt=DERIVA` | |
 | BLOQUEIO (setpoint) | Mover a chave "Controlador" para ATAQUE (`sp=45.0C`) | Vermelho piscando | Intermitente (300 ms) | `ATAQUE BLOQUEADO` / `SETPOINT 45C 58s` | **apagado** / **aceso** | `*** BLOQUEIO (SETPOINT_INVALIDO) ***`, `st=BLOQUEIO`, `trava=` decrescendo | |
-| BLOQUEIO (degelo) | Com `sp` normal, ligar a chave de degelo (fora das janelas de 6h e 18h do relógio local) | Vermelho piscando | Intermitente | `ATAQUE BLOQUEADO` / `DEGELO HORA 58s` | apagado / aceso | `mt=DEGELO_FORA_HORARIO` | |
 | BLOQUEIO (aquecimento rápido) | Com a porta fechada, subir o DHT22 de 5 °C para cerca de 7 °C em poucos segundos (taxa acima de 0,5 °C/min) | Vermelho piscando | Intermitente | `ATAQUE BLOQUEADO` / `AQUEC RAPIDO 58s` | apagado / aceso | `mt=AQUECIMENTO_RAPIDO`, `taxa=+` alta | |
 | Aquecimento rápido com porta aberta | Igual ao anterior, mas com o LDR claro | Amarelo fixo | 1 bipe a cada 10 s | `PORTA ABERTA` | aceso / apagado | `st=ATENCAO` (não bloqueia) | |
 | Trava ignora ordem | Durante o BLOQUEIO, mexer na chave "Controlador" de novo (voltar para NORMAL e para ATAQUE) | Vermelho piscando | Intermitente | continua `ATAQUE BLOQUEADO` | apagado / aceso | `ordem do controlador IGNORADA (trava ativa)` | |
