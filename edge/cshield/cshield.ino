@@ -53,6 +53,11 @@ static void imprimirSerial() {
   if (decisao.novoBloqueio)
     Serial.printf("[%s] *** BLOQUEIO (%s): aquecedor cortado, ventoinha ligada ***\n",
                   ID_DEVICE, nomeMotivo(decisao.motivo));
+  if (decisao.liberou)
+    Serial.printf("[%s] liberacao presencial ACEITA: bloqueio encerrado\n", ID_DEVICE);
+  if (decisao.liberacaoRecusada)
+    Serial.printf("[%s] liberacao RECUSADA: a trava minima ainda tem %lus\n",
+                  ID_DEVICE, decisao.travaRestanteMs / 1000UL);
   if (decisao.mudancaIgnorada)
     Serial.printf("[%s] ordem do controlador IGNORADA (trava ativa)\n", ID_DEVICE);
 }
@@ -101,7 +106,8 @@ void loop() {
   if (agora < BOOT_TELA_MS) {
     // mantém a tela de boot
   } else if (botaoProgressoPct() > 0) {
-    mostrarLiberacao(botaoProgressoPct());
+    if (decisao.travaRestanteMs > 0) mostrarTravaAtiva(decisao.travaRestanteMs);
+    else                             mostrarLiberacao(botaoProgressoPct());
   } else {
     mostrarEstado(decisao, leitura);
   }

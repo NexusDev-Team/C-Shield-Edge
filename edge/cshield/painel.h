@@ -122,6 +122,16 @@ static void mostrarEstado(const Decisao& d, const Leitura& l) {
   escreverLinha(1, l2);
 }
 
+// Botão segurado durante a trava mínima: avisa por que ainda não vai liberar.
+static void mostrarTravaAtiva(unsigned long travaRestanteMs) {
+  char l2[24];
+  unsigned long s = travaRestanteMs / 1000UL;
+  if (s >= 100) snprintf(l2, sizeof(l2), "AGUARDE %lum", s / 60UL);
+  else          snprintf(l2, sizeof(l2), "AGUARDE %lus", s);
+  escreverLinha(0, "TRAVA ATIVA");
+  escreverLinha(1, l2);
+}
+
 // Tela de liberação: título e barra de 16 blocos que enche em LIBERACAO_MS.
 static void mostrarLiberacao(int progressoPct) {
   char barra[LCD_COLUNAS + 1];
