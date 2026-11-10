@@ -49,7 +49,7 @@ Regras de execução: execução direta e auto-revisada (decisão V3 do plano); 
 | Tarefa | Entrega | Status |
 | --- | --- | --- |
 | T19 | `docs/edge-testes-estados.md` | Concluída |
-| T20 | `docs/edge-roteiro-video.md` | Pendente |
+| T20 | `docs/edge-roteiro-video.md` | Concluída |
 | T21 | `README.md` | Pendente |
 
 ## Casos de teste da T8 e requisitos cobertos
