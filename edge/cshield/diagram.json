@@ -1,0 +1,93 @@
+{
+  "version": 1,
+  "author": "Nexus Vision — C-Shield (GS 2026.2 CitizenTech)",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "wokwi-esp32-devkit-v1", "id": "esp", "top": 0, "left": 0, "attrs": {} },
+    { "type": "wokwi-breadboard-half", "id": "bb1", "top": -110, "left": -20, "attrs": {} },
+
+    { "type": "wokwi-dht22", "id": "dht1", "top": -260, "left": -20, "attrs": {} },
+    { "type": "wokwi-resistor", "id": "r_dht", "top": -200, "left": 10, "rotate": 90, "attrs": { "value": "4700" } },
+    { "type": "wokwi-photoresistor-sensor", "id": "ldr1", "top": -260, "left": 70, "attrs": {} },
+    { "type": "wokwi-rgb-led", "id": "rgb1", "top": -260, "left": 160, "attrs": { "common": "cathode" } },
+    { "type": "wokwi-resistor", "id": "r_r", "top": -190, "left": 150, "rotate": 90, "attrs": { "value": "220" } },
+    { "type": "wokwi-resistor", "id": "r_g", "top": -190, "left": 170, "rotate": 90, "attrs": { "value": "220" } },
+    { "type": "wokwi-resistor", "id": "r_b", "top": -190, "left": 190, "rotate": 90, "attrs": { "value": "220" } },
+    { "type": "wokwi-buzzer", "id": "bz1", "top": -260, "left": 250, "attrs": {} },
+
+    { "type": "wokwi-lcd1602", "id": "lcd1", "top": -330, "left": 340, "attrs": { "pins": "i2c" } },
+
+    { "type": "wokwi-potentiometer", "id": "pot1", "top": 10, "left": 220, "attrs": { "label": "Setpoint do controlador" } },
+    { "type": "wokwi-slide-switch", "id": "sw1", "top": 110, "left": 230, "attrs": { "label": "Degelo do controlador" } },
+    { "type": "wokwi-pushbutton", "id": "btn1", "top": 170, "left": 230, "attrs": { "color": "green", "label": "Liberar (3 s)" } },
+
+    { "type": "wokwi-relay-module", "id": "rele1", "top": 10, "left": 330, "attrs": { "label": "Rele 1 - corta aquecedor (NF)" } },
+    { "type": "wokwi-relay-module", "id": "rele2", "top": 10, "left": 450, "attrs": { "label": "Rele 2 - ventoinha (NA)" } },
+
+    { "type": "wokwi-resistor", "id": "r_aq", "top": 130, "left": 345, "rotate": 90, "attrs": { "value": "220" } },
+    { "type": "wokwi-led", "id": "led_aq", "top": 170, "left": 345, "attrs": { "color": "orange", "label": "Aquecedor" } },
+    { "type": "wokwi-resistor", "id": "r_vt", "top": 130, "left": 465, "rotate": 90, "attrs": { "value": "220" } },
+    { "type": "wokwi-led", "id": "led_vt", "top": 170, "left": 465, "attrs": { "color": "blue", "label": "Ventoinha" } }
+  ],
+  "connections": [
+    [ "esp:TX0", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX0", "$serialMonitor:TX", "", [] ],
+
+    [ "esp:3V3", "bb1:tp.1", "red", [ "v0" ] ],
+    [ "esp:GND.1", "bb1:tn.1", "black", [ "v0" ] ],
+
+    [ "dht1:SDA", "esp:D4", "green", [ "v0" ] ],
+    [ "dht1:VCC", "bb1:tp.5", "red", [ "v0" ] ],
+    [ "dht1:GND", "bb1:tn.5", "black", [ "v0" ] ],
+    [ "r_dht:1", "dht1:SDA", "green", [ "v0" ] ],
+    [ "r_dht:2", "bb1:tp.6", "red", [ "v0" ] ],
+
+    [ "ldr1:AO", "esp:D34", "green", [ "v0" ] ],
+    [ "ldr1:VCC", "bb1:tp.10", "red", [ "v0" ] ],
+    [ "ldr1:GND", "bb1:tn.10", "black", [ "v0" ] ],
+
+    [ "pot1:SIG", "esp:D35", "green", [ "v0" ] ],
+    [ "pot1:VCC", "bb1:tp.12", "red", [ "v0" ] ],
+    [ "pot1:GND", "bb1:tn.12", "black", [ "v0" ] ],
+
+    [ "sw1:2", "esp:D18", "green", [ "v0" ] ],
+    [ "sw1:1", "bb1:tn.14", "black", [ "v0" ] ],
+    [ "sw1:3", "bb1:tp.14", "red", [ "v0" ] ],
+
+    [ "btn1:1.l", "esp:D19", "green", [ "v0" ] ],
+    [ "btn1:2.l", "bb1:tn.16", "black", [ "v0" ] ],
+
+    [ "esp:D25", "r_r:1", "green", [ "v0" ] ],
+    [ "r_r:2", "rgb1:R", "green", [ "v0" ] ],
+    [ "esp:D26", "r_g:1", "green", [ "v0" ] ],
+    [ "r_g:2", "rgb1:G", "green", [ "v0" ] ],
+    [ "esp:D27", "r_b:1", "green", [ "v0" ] ],
+    [ "r_b:2", "rgb1:B", "green", [ "v0" ] ],
+    [ "rgb1:COM", "bb1:tn.15", "black", [ "v0" ] ],
+
+    [ "esp:D5", "bz1:2", "green", [ "v0" ] ],
+    [ "bz1:1", "bb1:tn.20", "black", [ "v0" ] ],
+
+    [ "esp:D23", "rele1:IN", "green", [ "v0" ] ],
+    [ "esp:VIN", "rele1:VCC", "red", [ "v0" ] ],
+    [ "rele1:GND", "bb1:tn.18", "black", [ "v0" ] ],
+    [ "rele1:COM", "bb1:tp.18", "red", [ "v0" ] ],
+    [ "rele1:NC", "r_aq:1", "green", [ "v0" ] ],
+    [ "r_aq:2", "led_aq:A", "green", [ "v0" ] ],
+    [ "led_aq:C", "bb1:tn.22", "black", [ "v0" ] ],
+
+    [ "esp:D33", "rele2:IN", "green", [ "v0" ] ],
+    [ "esp:VIN", "rele2:VCC", "red", [ "v0" ] ],
+    [ "rele2:GND", "bb1:tn.19", "black", [ "v0" ] ],
+    [ "rele2:COM", "bb1:tp.19", "red", [ "v0" ] ],
+    [ "rele2:NO", "r_vt:1", "green", [ "v0" ] ],
+    [ "r_vt:2", "led_vt:A", "green", [ "v0" ] ],
+    [ "led_vt:C", "bb1:tn.23", "black", [ "v0" ] ],
+
+    [ "lcd1:SDA", "esp:D21", "blue", [ "v0" ] ],
+    [ "lcd1:SCL", "esp:D22", "blue", [ "v0" ] ],
+    [ "lcd1:VCC", "esp:VIN", "red", [ "v0" ] ],
+    [ "lcd1:GND", "bb1:tn.25", "black", [ "v0" ] ]
+  ],
+  "dependencies": {}
+}
