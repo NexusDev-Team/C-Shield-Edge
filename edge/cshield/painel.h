@@ -1,5 +1,5 @@
 /*
- * C-Shield — Edge Computing do Guardião (GS 2026.2 "CitizenTech")
+ * C-Shield — Edge Computing (GS 2026.2 "CitizenTech")
  * Edge Computing & Computer Systems · FIAP · Prof. Dr. Fábio H. Cabrini
  * Equipe Nexus Vision. Integrantes:
  *   Isac Nilton Fernandes de Oliveira — RM573282
@@ -16,16 +16,17 @@
  * só reescritos no LCD quando mudam, para o display não piscar. O nome do produto
  * vem sempre de NOME_PRODUTO.
  *
- * Telas (layout do plano, seção 0.3):
+ * Telas (linha 1 / linha 2):
  *   Boot          NOME_PRODUTO / Iniciando...
- *   NORMAL        "C-Shield NORMAL" / "4.8C 2a8C"
- *   ATENCAO       "PORTA ABERTA" ou "DERIVA" / temperatura e faixa
- *   BLOQUEIO      "ATAQUE BLOQUEADO" / motivo e tempo de trava
- *   CRITICO       "PRODUTO EM RISCO" / temperatura e exposição
- *   FALHA_SENSOR  "FALHA NO SENSOR" / "DHT22 sem dado"
- *   Liberando     "LIBERANDO..." / barra de progresso de 16 blocos
+ *   NORMAL        "C-Shield NORMAL" / "5.0C 2a8C"
+ *   ATENCAO       "PORTA ABERTA", "DERIVA" ou "DEGELO 0:12" / temperatura e faixa
+ *   BLOQUEIO      "ATAQUE BLOQUEADO" / motivo, alternando com "SEGURE BOTAO 3s"
  *   Restaurando   "RESTAURANDO TEMP" / "BLOQUEIO ATIVO" (bloqueio com temperatura alta)
- *   Liberado      "BLOQUEIO" / "LIBERADO!" (por LIBERADO_TELA_MS após a liberação)
+ *   CRITICO       "PRODUTO EM RISCO" / temperatura e exposição
+ *   FALHA_SENSOR  "SENSOR SEM LEIT." / "DHT22 sem dado"
+ *   Liberando     "LIBERANDO..." / barra de progresso de 16 blocos
+ *   Liberado      "BLOQUEIO" / "LIBERADO!" (por AVISO_TELA_MS)
+ *   Recusada      "FORA DA FAIXA" / "AGUARDE" (por AVISO_TELA_MS)
  */
 #ifndef PAINEL_H
 #define PAINEL_H
@@ -67,24 +68,23 @@ static void mostrarBoot() {
   escreverLinha(1, "Iniciando...");
 }
 
-// Texto curto do motivo de bloqueio para a linha 2 (cabe em 16 colunas com o tempo).
+// Texto curto do motivo de bloqueio para a linha 2 (cabe em 16 colunas).
 static const char* motivoNoLcd(Motivo m) {
   switch (m) {
-    case MT_SETPOINT_INVALIDO:   return "SETPOINT";
-    case MT_DEGELO_FORA_HORARIO: return "DEGELO HORA";
-    case MT_DEGELO_LONGO:        return "DEGELO LONGO";
-    case MT_AQUECIMENTO_RAPIDO:  return "AQUEC RAPIDO";
-    default:                     return "BLOQUEADO";
+    case MT_DEGELO_FORCADO:  return "DEGELO FORCADO";
+    case MT_AQUECEDOR_LONGO: return "AQUEC LONGO";
+    case MT_SUBIDA_RAPIDA:   return "SUBIDA RAPIDA";
+    default:                 return "BLOQUEADO";
   }
 }
 
-// Desenha a tela do estado atual. `l` traz a temperatura e o setpoint; `d`, o estado,
-// o motivo, a trava restante e a exposição.
-static void mostrarEstado(const Decisao& d, const Leitura& l) {
+// Desenha a tela do estado atual. `l` traz a temperatura; `d`, o estado, o motivo, o degelo
+// restante e a exposição. `agoraMs` alterna a linha 2 do bloqueio.
+static void mostrarEstado(const Decisao& d, const Leitura& l, unsigned long agoraMs) {
   const Perfil p = perfilAtivo();
   char l1[24], l2[24];
 
-  // Faixa do perfil na linha 2 dos estados com temperatura: "4.8C 2a8C".
+  // Faixa do perfil na linha 2 dos estados com temperatura: "5.0C 2a8C".
   char faixa[24];
   snprintf(faixa, sizeof(faixa), "%.1fC %da%dC", l.temperatura, (int)p.tMin, (int)p.tMax);
 
@@ -94,27 +94,25 @@ static void mostrarEstado(const Decisao& d, const Leitura& l) {
       snprintf(l2, sizeof(l2), "%s", faixa);
       break;
     case ST_ATENCAO:
-      snprintf(l1, sizeof(l1), "%s", d.motivo == MT_PORTA_ABERTA ? "PORTA ABERTA" : "DERIVA");
+      if (d.motivo == MT_DEGELO) {
+        unsigned long s = d.degeloRestanteMs / 1000UL;   // contagem regressiva m:ss
+        snprintf(l1, sizeof(l1), "DEGELO %lu:%02lu", s / 60UL, s % 60UL);
+      } else {
+        snprintf(l1, sizeof(l1), "%s", d.motivo == MT_PORTA_ABERTA ? "PORTA ABERTA" : "DERIVA");
+      }
       snprintf(l2, sizeof(l2), "%s", faixa);
       break;
-    case ST_BLOQUEIO: {
+    case ST_BLOQUEIO:
       snprintf(l1, sizeof(l1), "ATAQUE BLOQUEADO");
-      unsigned long s = d.travaRestanteMs / 1000UL;
-      char tempo[8];
-      if (s >= 100) snprintf(tempo, sizeof(tempo), "%lum", s / 60UL);  // minutos quando longo
-      else          snprintf(tempo, sizeof(tempo), "%lus", s);
-      if (d.motivo == MT_SETPOINT_INVALIDO)   // mostra o valor recebido
-        snprintf(l2, sizeof(l2), "SETPOINT %.0fC %s", l.setpoint, tempo);
-      else
-        snprintf(l2, sizeof(l2), "%s %s", motivoNoLcd(d.motivo), tempo);
+      if (((agoraMs / ALTERNA_TELA_MS) % 2) == 0) snprintf(l2, sizeof(l2), "%s", motivoNoLcd(d.motivo));
+      else                                        snprintf(l2, sizeof(l2), "SEGURE BOTAO 3s");
       break;
-    }
     case ST_CRITICO:
       snprintf(l1, sizeof(l1), "PRODUTO EM RISCO");
       snprintf(l2, sizeof(l2), "T%.1f EX %.1f", l.temperatura, d.exposicao);
       break;
     case ST_FALHA_SENSOR:
-      snprintf(l1, sizeof(l1), "FALHA NO SENSOR");
+      snprintf(l1, sizeof(l1), "SENSOR SEM LEIT.");
       snprintf(l2, sizeof(l2), "DHT22 sem dado");
       break;
     default:
@@ -124,18 +122,8 @@ static void mostrarEstado(const Decisao& d, const Leitura& l) {
   escreverLinha(1, l2);
 }
 
-// Botão segurado durante a trava mínima: avisa por que ainda não vai liberar.
-static void mostrarTravaAtiva(unsigned long travaRestanteMs) {
-  char l2[24];
-  unsigned long s = travaRestanteMs / 1000UL;
-  if (s >= 100) snprintf(l2, sizeof(l2), "AGUARDE %lum", s / 60UL);
-  else          snprintf(l2, sizeof(l2), "AGUARDE %lus", s);
-  escreverLinha(0, "TRAVA ATIVA");
-  escreverLinha(1, l2);
-}
-
-// Bloqueio ativo com a temperatura ainda acima da faixa: a ventoinha de emergência está
-// trazendo a temperatura de volta.
+// Bloqueio ativo com a temperatura ainda acima da faixa: a ventoinha está trazendo a
+// temperatura de volta.
 static void mostrarRestaurando() {
   escreverLinha(0, "RESTAURANDO TEMP");
   escreverLinha(1, "BLOQUEIO ATIVO");
@@ -145,6 +133,12 @@ static void mostrarRestaurando() {
 static void mostrarLiberado() {
   escreverLinha(0, "BLOQUEIO");
   escreverLinha(1, "LIBERADO!");
+}
+
+// Liberação recusada: o botão foi segurado mas a temperatura ainda está fora da faixa.
+static void mostrarForaDaFaixa() {
+  escreverLinha(0, "FORA DA FAIXA");
+  escreverLinha(1, "AGUARDE");
 }
 
 // Tela de liberação: título e barra de 16 blocos que enche em LIBERACAO_MS.
