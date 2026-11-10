@@ -87,6 +87,8 @@ struct Decisao {
   bool   mudancaIgnorada;  // true quando a trava descartou uma ordem do controlador
   bool   liberou;          // true no ciclo em que a liberação presencial foi aceita
   bool   liberacaoRecusada;// true quando o botão foi segurado mas a trava mínima não acabou
+  bool   bloqueado;        // o bloqueio está ativo (mesmo que o estado mostrado seja CRITICO)
+  bool   alarme;           // o apito deve tocar: bloqueio ou crítico com a temperatura ainda fora da faixa
   float  taxaCPorMin;      // para a linha do Serial
   float  exposicao;        // °C·min acumulados, para `ex`
   unsigned long travaRestanteMs; // 0 quando a trava mínima já passou
@@ -292,6 +294,14 @@ static inline Decisao avaliar(const Leitura& l, Contexto& ctx, unsigned long ago
   // compressor: o C-Shield só veta o que aumenta o risco.
   d.cortaAquecedor = ctx.bloqueado || critico;
   d.ligaVentoinha = ctx.bloqueado || critico;
+
+  // Apito: toca enquanto o bloqueio (ou o crítico) estiver com a temperatura fora da faixa, e
+  // para quando ela regulariza. O bloqueio NÃO acaba com o apito: só a liberação presencial.
+  // Sem leitura válida não dá para saber se regularizou, então o apito continua. Nos primeiros
+  // ALARME_INICIAL_MS de um bloqueio o apito toca de qualquer jeito (ataque com temperatura boa).
+  const bool inicioDoBloqueio = ctx.bloqueado && (agoraMs - ctx.inicioBloqueioMs) < ALARME_INICIAL_MS;
+  d.bloqueado = ctx.bloqueado;
+  d.alarme = (ctx.bloqueado || critico) && (!l.valida || deriva || inicioDoBloqueio);
 
   d.exposicao = ctx.exposicao;
   if (ctx.bloqueado) {

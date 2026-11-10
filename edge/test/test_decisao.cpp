@@ -417,6 +417,57 @@ static void teste_nomes() {  // R34 (nomes usados no payload)
   CHECK(std::string(nomeMotivo(MT_SETPOINT_INVALIDO)) == "SETPOINT_INVALIDO");
 }
 
+static void teste_alarme_ate_regularizar() {  // R50, R51
+  std::printf("alarme sonoro ate a temperatura regularizar, bloqueio continua (R50, R51)\n");
+  Contexto ctx; iniciarContexto(ctx);
+  const unsigned long t = bloquearPorSetpoint(ctx);        // bloqueio com a temperatura boa (5 °C)
+  Leitura l = base();
+  Decisao d = avaliar(l, ctx, t + PASSO);
+  CHECK(d.bloqueado && d.alarme);                          // aviso inicial, mesmo com temperatura boa
+  d = avaliar(l, ctx, t + ALARME_INICIAL_MS + PASSO);
+  CHECK(d.bloqueado && !d.alarme);                         // temperatura boa: silêncio, bloqueio fica
+
+  l.temperatura = 8.5f;                                    // acima da faixa: o alarme volta
+  d = avaliar(l, ctx, t + ALARME_INICIAL_MS + 2 * PASSO);
+  CHECK(d.bloqueado && d.alarme);
+  l.temperatura = 5.0f;                                    // regularizou: silêncio, bloqueio fica
+  d = avaliar(l, ctx, t + ALARME_INICIAL_MS + 3 * PASSO);
+  CHECK(d.bloqueado && !d.alarme && d.estado == ST_BLOQUEIO);
+  d = avaliar(l, ctx, t + 2UL * 3600UL * 1000UL);          // horas depois, sem botão
+  CHECK(d.bloqueado && !d.alarme);
+
+  Contexto c2; iniciarContexto(c2);                        // CRITICO: alarme até voltar à faixa
+  unsigned long u = bloquearPorSetpoint(c2) + ALARME_INICIAL_MS + PASSO;
+  Leitura q = base(); q.temperatura = 12.0f;
+  avaliar(q, c2, u += PASSO);
+  d = avaliar(q, c2, u += PASSO);
+  CHECK(d.estado == ST_CRITICO && d.alarme && d.bloqueado);
+  q.temperatura = 5.0f;
+  d = avaliar(q, c2, u += PASSO);
+  CHECK(d.estado == ST_BLOQUEIO && !d.alarme && d.bloqueado);
+
+  Contexto c3; iniciarContexto(c3);                        // sem leitura não dá para saber: alarme
+  unsigned long v = bloquearPorSetpoint(c3) + ALARME_INICIAL_MS + PASSO;
+  Leitura cega = base(); cega.valida = false;
+  avaliar(cega, c3, v += PASSO);
+  d = avaliar(cega, c3, v += PASSO);
+  CHECK(d.bloqueado && d.alarme);
+
+  Contexto c4; iniciarContexto(c4);                        // sem bloqueio nem crítico: nunca alarme
+  d = avaliar(base(), c4, T0);
+  CHECK(!d.bloqueado && !d.alarme);
+  Leitura quente = base(); quente.temperatura = 8.5f;      // deriva é só ATENCAO
+  avaliar(quente, c4, T0 + PASSO);
+  d = avaliar(quente, c4, T0 + 2 * PASSO);
+  CHECK(d.estado == ST_ATENCAO && !d.alarme);
+
+  Contexto c5; iniciarContexto(c5);                        // liberar apaga o bloqueio
+  unsigned long w = bloquearPorSetpoint(c5);
+  Leitura lib = base(); lib.liberacao = true;
+  d = avaliar(lib, c5, w + TRAVA_MS);
+  CHECK(d.liberou && !d.bloqueado && !d.alarme);
+}
+
 int main() {
   teste_perfis();
   teste_validacao_temperatura();
@@ -442,6 +493,7 @@ int main() {
   teste_prioridade();
   teste_reles_por_estado();
   teste_nomes();
+  teste_alarme_ate_regularizar();
   std::printf("\n%d verificacoes, %d falhas\n", total, falhas);
   return falhas == 0 ? 0 : 1;
 }

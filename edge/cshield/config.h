@@ -204,7 +204,15 @@ const unsigned long BUZZER_INTERVALO_MS = 10000; // ATENCAO e FALHA_SENSOR: um a
 const unsigned long BUZZER_INTERM_MS   = 300;   // BLOQUEIO: liga/desliga a cada 300 ms
 const unsigned int  BUZZER_FREQ_HZ     = 2000;  // tom do buzzer
 
-// Tempo em que o LCD confirma "BLOQUEIO LIBERADO" depois da liberação presencial.
+// Aviso sonoro inicial do bloqueio: o apito só toca enquanto a temperatura está fora da
+// faixa, mas um ataque com a temperatura ainda boa (por exemplo, um setpoint perigoso)
+// também precisa ser ouvido. 5 s bastam para chamar atenção sem virar incômodo.
+const unsigned long ALARME_INICIAL_MS = 5000;
+
+// A linha 2 do LCD alterna entre a temperatura e as mensagens do estado a cada 2 s.
+const unsigned long ALTERNA_TELA_MS = 2000;
+
+// Tempo em que o LCD confirma "Liberado" depois da liberação presencial.
 // 3 s: o bastante para ler a confirmação antes de a tela voltar ao estado normal.
 const unsigned long LIBERADO_TELA_MS = 3000;
 
