@@ -7,7 +7,9 @@ Projeto: C-Shield · Nexus Vision · GS 2026.2 "CitizenTech" · FIAP. Requisitos
 | Arquivo | Responsabilidade | Depende de Arduino? | Requisitos |
 | --- | --- | --- | --- |
 | `config.h` | Todas as constantes: pinos, perfis, limites, tempos, rede, textos | Não | R11, R18, R44 |
-| `decisao.h` | Lógica pura: estados, regras D1 a D3, termostato, ordens ignoradas, liberação, exposição | **Não** (testável com `g++`) | R12 a R31 |
+| `decisao.h` | Lógica pura: `avaliar()` (regras D1 a D3, termostato, ordens ignoradas, exposição) e `liberar()` | **Não** (testável com `g++`) | R12 a R31 |
+| `decisao_tipos.h` | Estados, motivos e as estruturas `Leitura`, `Contexto` e `Decisao` | **Não** | R12 a R31 |
+| `decisao_regras.h` | Auxiliares puras: validação, janela de degelo, nomes, histórico e taxa | **Não** | R6, R17, R18 |
 | `sensores.h` | DHT22, LDR, chaves do controlador com debounce, botão, média móvel; monta a `Leitura` | Sim | R6 a R10 |
 | `atuadores.h` | Relés (repouso no boot), LED RGB por estado, buzzer com `millis()` | Sim | R1, R32, R33 |
 | `painel.h` | Telas do LCD 16x2 I2C; só reescreve quando o texto muda | Sim | R34 a R36 |
@@ -15,7 +17,7 @@ Projeto: C-Shield · Nexus Vision · GS 2026.2 "CitizenTech" · FIAP. Requisitos
 | `rede.h` | Wi-Fi, NTP, MQTT **somente publish**, reconexão com sonda TCP, monta o payload | Sim | R2 a R4, R39, R40 |
 | `cshield.ino` | `setup()` e `loop()`: só orquestra; Serial | Sim | R37, R38, R45 |
 
-Se `decisao.h` passar de ~250 linhas, as funções auxiliares vão para `decisao_regras.h`, também puro.
+A lógica foi dividida em três arquivos puros (tipos, regras e decisão) para nenhum passar de ~250 linhas.
 
 ## 2. Máquina de estados
 

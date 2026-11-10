@@ -18,7 +18,7 @@
  * funciona como se o C-Shield não existisse. Por isso iniciarReles() é a PRIMEIRA coisa do
  * setup().
  *
- * O LED e o buzzer não usam delay(): o padrão (fixo, pisca, bipe) é calculado a partir
+ * O LED e o buzzer nunca param o loop(): o padrão (fixo, pisca, bipe) é calculado a partir
  * de millis(), então o loop() nunca trava.
  */
 #ifndef ATUADORES_H
