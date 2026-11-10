@@ -110,7 +110,7 @@ Rodar todas as verificações automáticas (testes, grep sem `subscribe`, grep s
 | --- | --- | --- |
 | T6 `config.h` | Concluída | commit `feat(edge): adiciona config.h ...` |
 | T7 `decisao.h` | Concluída | commit da lógica pura; lógica exercitada por porta em JS (34 verificações, 0 falhas) |
-| T8 `test_decisao.cpp` | Escrita, **não compilada** | sem `g++` na máquina; comando do plano precisa ser rodado pela equipe |
+| T8 `test_decisao.cpp` | Concluída | g++ (WinLibs 16.2) com `-Wall -Wextra`, sem avisos: 95 verificações, 0 falhas (10/11) |
 | T9 a T14 firmware | Concluídas, **não compiladas** | revisão de código; compilar no Wokwi |
 | T15, T16 | Concluídas | `diagram.json` válido; 13 pinos conferidos; pinos de relé e LCD a conferir no Wokwi |
 | T17 `provisionar.sh` | Concluída | `bash -n` e `DRY_RUN=1` (8 corpos JSON válidos, nenhum com `commands`) |
