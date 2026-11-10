@@ -102,6 +102,9 @@ G="/c/Users/isacn/AppData/Local/Microsoft/WinGet/Packages/BrechtSanders.WinLibs.
 # o C-Shield não pode receber comandos: resultado deve ser VAZIO
 grep -rnE "subscribe|setCallback|ArduinoOTA|WebServer" edge/cshield/
 
+# checagem de sintaxe do firmware inteiro com stubs (sem arduino-cli)
+"$G" -std=c++17 -fsyntax-only -Wall -Wextra -x c++ -I edge/test/stubs -I edge/cshield edge/cshield/cshield.ino
+
 # compilação, se o arduino-cli com core esp32 estiver disponível
 arduino-cli compile --fqbn esp32:esp32:esp32 edge/cshield
 

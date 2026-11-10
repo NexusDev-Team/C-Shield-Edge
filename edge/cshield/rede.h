@@ -1,5 +1,5 @@
 /*
- * C-Shield — Edge Computing do Guardião (GS 2026.2 "CitizenTech")
+ * C-Shield — Edge Computing (GS 2026.2 "CitizenTech")
  * Edge Computing & Computer Systems · FIAP · Prof. Dr. Fábio H. Cabrini
  * Equipe Nexus Vision. Integrantes:
  *   Isac Nilton Fernandes de Oliveira — RM573282
@@ -85,27 +85,29 @@ static void atualizarRede(unsigned long agoraMs) {
   Serial.println(mqtt.connect(ID_DEVICE) ? "ok" : "falhou");
 }
 
-// Hora local (0 a 23) pelo NTP. false enquanto o relógio ainda não sincronizou
+// Minuto do dia (0 a 1439) pelo NTP. false enquanto o relógio ainda não sincronizou
 // (por exemplo, offline): nesse caso vale só a duração máxima do degelo.
-static bool horaAtual(int& hora) {
+static bool horaAtual(int& minutoDoDia) {
   time_t agora = time(nullptr);
   if (agora < 1700000000L) return false;     // antes de nov/2023: relógio ainda não ajustado
   struct tm info;
   localtime_r(&agora, &info);
-  hora = info.tm_hour;
+  minutoDoDia = info.tm_hour * 60 + info.tm_min;
   return true;
 }
 
 // Monta o payload UltraLight:
-//   t|4.8|h|81|l|12|sp|5.0|dg|0|st|NORMAL|mt|-|bq|0|ex|0
-// Com o sensor inválido, t e h vão como -999 (não publica valor velho como se fosse leitura).
-static void montarPayload(char* buf, size_t n, const Leitura& l, const Decisao& d, int bloqueios) {
-  float t = l.valida ? l.temperatura : SETPOINT_AUSENTE;
-  float h = l.valida ? l.umidade : SETPOINT_AUSENTE;
-  float sp = l.temSetpoint ? l.setpoint : SETPOINT_AUSENTE;
-  snprintf(buf, n, "t|%.1f|h|%.0f|l|%.0f|sp|%.1f|dg|%d|st|%s|mt|%s|bq|%d|ex|%.1f",
-           t, h, l.luzPct, sp, l.degelo ? 1 : 0,
-           nomeEstado(d.estado), nomeMotivo(d.motivo), bloqueios, d.exposicao);
+//   t|4.8|h|81|l|12|aq|0|vt|1|vf|1|st|NORMAL|mt|-|bq|0|ci|0|ex|0
+// aq/vt = o que o controlador manda; vf = ventoinha efetiva depois do C-Shield; bq = bloqueios;
+// ci = comandos ignorados. Com o sensor inválido, t e h vão como -999 (não publica valor velho
+// como se fosse leitura).
+static void montarPayload(char* buf, size_t n, const Leitura& l, const Decisao& d, const Contexto& ctx) {
+  float t = l.valida ? l.temperatura : VALOR_AUSENTE;
+  float h = l.valida ? l.umidade : VALOR_AUSENTE;
+  snprintf(buf, n, "t|%.1f|h|%.0f|l|%.0f|aq|%d|vt|%d|vf|%d|st|%s|mt|%s|bq|%d|ci|%d|ex|%.1f",
+           t, h, l.luzPct, l.aquecedorCmd ? 1 : 0, l.ventoinhaCmd ? 1 : 0,
+           ventoinhaEfetiva(d, l) ? 1 : 0, nomeEstado(d.estado), nomeMotivo(d.motivo),
+           ctx.bloqueios, ctx.ignorados, d.exposicao);
 }
 
 static Estado ultimoEstadoPublicado = ST_NORMAL;
