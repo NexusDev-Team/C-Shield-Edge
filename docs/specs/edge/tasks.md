@@ -14,7 +14,7 @@ Regras de execução: uma tarefa por vez; cada tarefa termina com um commit em p
 | T2 | `requirements.md` | todos | Concluída |
 | T3 | `design.md` | todos | Concluída |
 | T4 | `tasks.md` (este arquivo) | todos | Concluída |
-| T5 | **Parar e pedir aprovação da equipe** | — | Aguardando |
+| T5 | **Parar e pedir aprovação da equipe** | — | Dispensada pelo usuário em 10/11 (execução autônoma com autorrevisão) |
 
 ## Fase B — Lógica pura e testes
 
@@ -102,3 +102,19 @@ Rodar todas as verificações automáticas (testes, grep sem `subscribe`, grep s
 ## Registro de mudanças
 
 - 10/11/2026: tarefas criadas já com T18 fora, T18b incluída e T19 por último (correção de escopo C1 a C6), nomes C-Shield (N1 a N6) e LCD 16x2 (P2, P3).
+- 10/11/2026 (execução): T6 a T17, T18b (roteiro, não executado), T20 e T21 concluídas. T18 fora da entrega. T19 não feita (baixa prioridade, prazo). Compilação C++ e execução no Wokwi não verificadas por falta de `g++`/`arduino-cli` e de acesso ao simulador; ver o relatório final. Dúvidas D1 a D5 do `requirements.md` adotadas como estão.
+
+## Status de execução (10/11/2026)
+
+| Tarefa | Status | Evidência |
+| --- | --- | --- |
+| T6 `config.h` | Concluída | commit `feat(edge): adiciona config.h ...` |
+| T7 `decisao.h` | Concluída | commit da lógica pura; lógica exercitada por porta em JS (34 verificações, 0 falhas) |
+| T8 `test_decisao.cpp` | Escrita, **não compilada** | sem `g++` na máquina; comando do plano precisa ser rodado pela equipe |
+| T9 a T14 firmware | Concluídas, **não compiladas** | revisão de código; compilar no Wokwi |
+| T15, T16 | Concluídas | `diagram.json` válido; 13 pinos conferidos; pinos de relé e LCD a conferir no Wokwi |
+| T17 `provisionar.sh` | Concluída | `bash -n` e `DRY_RUN=1` (8 corpos JSON válidos, nenhum com `commands`) |
+| T18 | Fora da entrega | correção C2 |
+| T18b | Roteiro pronto, **não executado** | EC2 sem resposta em 10/11 |
+| T19 | Não feita | baixa prioridade (C3) |
+| T20, T21 | Concluídas | `docs/edge-testes-estados.md`, `docs/edge-roteiro-video.md` |
