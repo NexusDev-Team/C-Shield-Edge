@@ -20,9 +20,9 @@ Regras de execução: execução direta e auto-revisada (decisão V3 do plano); 
 
 | Tarefa | Entrega | Requisitos | Status |
 | --- | --- | --- | --- |
-| T6 | `config.h`: pinos, perfis, limites, tempos, rede; cada valor justificado | R11, R18, R44 | Pendente |
-| T7 | `decisao.h`: `Leitura`, `Contexto`, `Decisao`, `avaliar()`, `liberar()` sem `Arduino.h` | R12 a R31 | Pendente |
-| T8 | `test_decisao.cpp`: um caso por requisito de lógica, nas duas configurações (`MODO_DEMO` 1 e 0) | R49 | Pendente |
+| T6 | `config.h`: pinos, perfis, limites, tempos, rede; cada valor justificado | R11, R18, R44 | Concluída |
+| T7 | `decisao.h`: `Leitura`, `Contexto`, `Decisao`, `avaliar()`, `liberar()` sem `Arduino.h` | R12 a R31 | Concluída |
+| T8 | `test_decisao.cpp`: um caso por requisito de lógica, nas duas configurações (`MODO_DEMO` 1 e 0) | R49 | Concluída |
 
 ## Fase C — Firmware
 
