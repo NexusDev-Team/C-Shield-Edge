@@ -187,6 +187,9 @@ const unsigned long BUZZER_INTERVALO_MS = 10000; // ATENCAO e FALHA_SENSOR: um a
 const unsigned long BUZZER_INTERM_MS   = 300;   // BLOQUEIO: liga/desliga a cada 300 ms
 const unsigned int  BUZZER_FREQ_HZ     = 2000;  // tom do buzzer
 
+// Tempo em que a tela de boot fica no LCD antes de mostrar o estado.
+const unsigned long BOOT_TELA_MS = 1500;
+
 // ---------------------------------------------------------------------------
 // Rede e FIWARE
 // ---------------------------------------------------------------------------
