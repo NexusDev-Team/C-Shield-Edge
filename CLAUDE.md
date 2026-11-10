@@ -8,9 +8,9 @@ Este arquivo nasceu do `CLAUDE.md` do projeto Vinheria Full (CP5), herdando o pr
 
 Global Solution 2026.2 "CitizenTech" (FIAP) — entrega de Edge Computing & Computer Systems, Prof. Dr. Fábio H. Cabrini, equipe **Nexus Vision** (Engenharia de Software, 1º ano). Prazo de entrega: **11/11/2026 à noite** (prioridade máxima de velocidade; cortar primeiro o que é opcional).
 
-O produto é o **C-Shield** (de Cyber Shield; "Guardião" aparece nos textos só como descrição do papel do dispositivo, o nome exibido é sempre C-Shield e sai da constante `NOME_PRODUTO`): um ESP32 instalado junto da câmara fria (sala de vacina, hemocentro, farmácia, mercado) que mede temperatura, umidade e porta aberta com sensores próprios, observa o setpoint e o degelo que o controlador comercial está mandando, decide com uma política gravada no firmware e, diante de ordem perigosa (ataque ao controlador), corta o aquecimento ou degelo por relé, liga a ventoinha de emergência e entra em bloqueio. Alerta no local (LED RGB, buzzer, LCD 16x2 I2C) e **só envia** dados ao FIWARE. Frase do produto: "Vê de longe. Só obedece de perto." A liberação do bloqueio é só presencial (botão por 3 s).
+O produto é o **C-Shield** (de Cyber Shield; "Guardião" aparece nos textos só como descrição do papel do dispositivo, o nome exibido é sempre C-Shield e sai da constante `NOME_PRODUTO`): um ESP32 instalado junto da câmara fria (sala de vacina, hemocentro, farmácia, mercado) que mede temperatura, umidade e porta aberta com sensores próprios, observa se o controlador comercial está ligando o aquecedor e a ventoinha, decide com uma política gravada no firmware e, diante de sinal de ataque (aquecedor ligado com a ventoinha desligada fora do degelo permitido, ou temperatura subindo de repente), assume o controle local: corta o aquecedor por relé, ignora o controlador e regula a ventoinha como termostato de emergência. Alerta no local (LED RGB, buzzer, LCD 16x2 I2C) e **só envia** dados ao FIWARE. Frase do produto: "Vê de longe. Só obedece de perto." A liberação do bloqueio é só presencial (botão por 3 s), sem tempo de expiração.
 
-Princípio central: **o firmware do Guardião não assina nenhum tópico de comando**. Proibido `subscribe`, `setCallback`, OTA e servidor HTTP nele.
+Princípio central: **o firmware do C-Shield não assina nenhum tópico de comando**. Proibido `subscribe`, `setCallback`, OTA e servidor HTTP nele.
 
 Entrega: link público do Wokwi (roda sem ajustes, diagrama organizado, código comentado) + vídeo no YouTube de até 7 min. Os nomes de todos os integrantes devem constar no código-fonte.
 
@@ -18,7 +18,7 @@ O projeto Vinheria Full (`C:\Users\isacn\desktop\projetovinheria`, repositório 
 
 **Repositórios separados.** Este repositório (`c-shield-edge`) contém **só** o trabalho de Edge: `edge/`, `docs/specs/edge/` e `docs/edge-*.md`, com a estrutura de pastas do plano. O site de Front e Web (que hospeda a rota `/ao-vivo`) fica no repositório `c-shield-web`, ainda não criado; nenhum arquivo do site entra aqui, e nenhum arquivo de Edge entra lá. O `README.md` dos dois repositórios abre com a Ficha CitizenTech e traz um link para o outro repositório.
 
-Plano completo e autoritativo: `PLANO-CSHIELD.md` (inclui rubrica, mapa de pinos, estados, regras de bloqueio, payload FIWARE e as tarefas T1 a T21). Em caso de divergência entre este arquivo e o plano, o plano manda nos detalhes de implementação; este arquivo manda no processo de trabalho. Método do plano: spec-driven. Primeiro a especificação (Fase A), parada obrigatória para aprovação da equipe (T5), depois o código.
+Plano completo e autoritativo: `PLANO-CSHIELD.md` versão 2 (§0 traz as decisões que prevalecem; inclui rubrica, mapa de pinos, estados, regras D1 a D3, payload FIWARE e o passo a passo de execução na §5). Em caso de divergência entre este arquivo e o plano, o plano manda nos detalhes de implementação; este arquivo manda no processo de trabalho. Método do plano: spec-driven. Primeiro a especificação (Fase A), parada obrigatória para aprovação da equipe (T5), depois o código.
 
 ## 2. Divisão de papéis entre modelos
 
@@ -78,9 +78,9 @@ Não trocar sem decisão explícita do usuário.
 - Regras específicas do firmware: sem `delay()` nos padrões de alerta e no `loop()` (máquina de estado com `millis()`); no `setup()` os pinos dos relés vão para o estado desenergizado **antes** de qualquer outra coisa (falha segura); o nome do produto sai só da constante `NOME_PRODUTO`; todas as constantes ficam em `config.h`, cada limite com comentário de justificativa.
 - Nomes canônicos (não inventar variações):
   - firmware em `edge/cshield/cshield.ino` (pasta e `.ino` com o mesmo nome); `NOME_PRODUTO = "C-Shield"`.
-  - device `cshield001`, entity `urn:ngsi-ld:CShield:001`, type `CShield`; device do controlador (opcional) `controlador001` com comandos `atacar` e `normal`.
+  - device `cshield001`, entity `urn:ngsi-ld:CShield:001`, type `CShield`.
   - headers `fiware-service: smart`, `fiware-servicepath: /`, apikey `TEF`; tópico `/TEF/cshield001/attrs`; nenhum tópico de comando.
-  - UltraLight: `t`, `h`, `l`, `sp`, `dg`, `st`, `mt`, `bq`, `ex`.
+  - UltraLight: `t`, `h`, `l`, `aq`, `vt`, `vf`, `st`, `mt`, `bq`, `ci`, `ex` (nomes longos no Orion: `temperature humidity luminosity heater fanCommand fan state reason blocks ignoredCommands exposure`).
   - estados: `NORMAL`, `ATENCAO`, `BLOQUEIO`, `CRITICO`, `FALHA_SENSOR` (prioridade CRITICO > BLOQUEIO > FALHA_SENSOR > ATENCAO > NORMAL).
 - Todo arquivo de código novo começa com o cabeçalho do grupo: nome do projeto, disciplina, professor e os integrantes com RM (lista abaixo). Os nomes ficam exatamente como estão (decisão do usuário de 10/11).
   - Isac Nilton Fernandes de Oliveira — RM573282
@@ -94,9 +94,12 @@ Não trocar sem decisão explícita do usuário.
 
 ```bash
 # testes da lógica de decisão (sem placa)
-g++ -std=c++17 -Wall -Wextra -I edge/cshield edge/test/test_decisao.cpp -o /tmp/t && /tmp/t
+#   (g++ é o WinLibs do winget, fora do PATH; usar o caminho completo e -static, senão o .exe não abre)
+G="/c/Users/isacn/AppData/Local/Microsoft/WinGet/Packages/BrechtSanders.WinLibs.POSIX.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe/mingw64/bin/g++.exe"
+"$G" -std=c++17 -Wall -Wextra -static -I edge/cshield edge/test/test_decisao.cpp -o "$TEMP/t.exe" && "$TEMP/t.exe"
+"$G" -std=c++17 -Wall -Wextra -static -DMODO_DEMO=0 -I edge/cshield edge/test/test_decisao.cpp -o "$TEMP/t0.exe" && "$TEMP/t0.exe"
 
-# o Guardião não pode receber comandos: resultado deve ser VAZIO
+# o C-Shield não pode receber comandos: resultado deve ser VAZIO
 grep -rnE "subscribe|setCallback|ArduinoOTA|WebServer" edge/cshield/
 
 # compilação, se o arduino-cli com core esp32 estiver disponível
