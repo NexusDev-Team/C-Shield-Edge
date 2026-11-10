@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# C-Shield — Edge Computing do Guardião (GS 2026.2 "CitizenTech")
+# C-Shield — Edge Computing (GS 2026.2 "CitizenTech")
 # Edge Computing & Computer Systems · FIAP · Prof. Dr. Fábio H. Cabrini
 # Equipe Nexus Vision. Integrantes:
 #   Isac Nilton Fernandes de Oliveira — RM573282
@@ -43,7 +43,7 @@ ORION_URL="http://${FIWARE_HOST}:${ORION_PORT}"
 
 # Atributos do device: object_id curto (vai no payload UltraLight) -> nome longo (Orion/STH).
 # Os de telemetria e estado são os que vão para o histórico do STH-Comet (seção abaixo).
-ATRIBUTOS_STH=(temperature humidity luminosity state blocks exposure)
+ATRIBUTOS_STH=(temperature humidity luminosity fan state blocks ignoredCommands exposure)
 
 # --- Funções ---
 
@@ -97,11 +97,13 @@ corpo_device=$(cat <<EOF
     { "object_id": "t",  "name": "temperature", "type": "Float" },
     { "object_id": "h",  "name": "humidity",    "type": "Float" },
     { "object_id": "l",  "name": "luminosity",  "type": "Integer" },
-    { "object_id": "sp", "name": "setpoint",    "type": "Float" },
-    { "object_id": "dg", "name": "defrost",     "type": "Integer" },
+    { "object_id": "aq", "name": "heater",      "type": "Integer" },
+    { "object_id": "vt", "name": "fanCommand",  "type": "Integer" },
+    { "object_id": "vf", "name": "fan",         "type": "Integer" },
     { "object_id": "st", "name": "state",       "type": "Text" },
     { "object_id": "mt", "name": "reason",      "type": "Text" },
     { "object_id": "bq", "name": "blocks",      "type": "Integer" },
+    { "object_id": "ci", "name": "ignoredCommands", "type": "Integer" },
     { "object_id": "ex", "name": "exposure",    "type": "Float" }
   ]
 } ] }
