@@ -1,88 +1,120 @@
-# Tarefas — Edge do C-Shield (versão 2)
+# Tarefas — Edge do C-Shield
 
-Projeto: C-Shield · Nexus Vision · GS 2026.2 "CitizenTech" · FIAP. Origem: `PLANO-CSHIELD.md` versão 2, seção 5. Requisitos: `requirements.md`. Design: `design.md`.
+Projeto: C-Shield · Nexus Vision · GS 2026.2 "CitizenTech" · FIAP. Origem: `PLANO-CSHIELD.md` §3, já com a correção de escopo (§0), de local (§0.1), de nome (§0.2) e de prazo/display (§0.3). Requisitos: `requirements.md`. Design: `design.md`.
 
-Regras de execução: execução direta e auto-revisada (decisão V3 do plano); um commit por passo verificado, em português, Conventional Commits, sem co-author; não avançar com testes falhando; passo que falha para e reporta.
+Regras de execução: uma tarefa por vez; cada tarefa termina com um commit em português no formato Conventional Commits, sem co-author; não avançar com testes falhando; passo que falha para e reporta.
 
-**Prazo: 11/11/2026 à noite.** Ordem de corte se apertar: T18 (deixar o passo a passo) → refinamento do `diagram.json` → modelo térmico (`MODELO_TERMICO_DEMO 0`). Nunca cortar: testes da `decisao.h`, os 5 estados, falha segura, ausência de `subscribe`, Serial e roteiro do vídeo.
+**Prazo: 11/11/2026 à noite.** Ordem de corte se apertar: T19 → refinamento do `diagram.json` (T15). T18 está fora da entrega. Nunca cortar: T8, T10 (relés seguros), T13 (sem `subscribe`), T14, T18b e T21.
 
 ## Fase A — Especificação
 
-| Tarefa | O que é | Status |
-| --- | --- | --- |
-| T1 | Reaproveitamento e mudanças (plano, seção 5.1) | Concluída |
-| T2 | `requirements.md` (R1 a R49) | Concluída |
-| T3 | `design.md` | Concluída |
-| T4 | `tasks.md` (este arquivo) | Concluída |
-| T5 | Aprovação | Dada pelo usuário no replanejamento da v2 (10/11) |
+| Tarefa | O que é | Requisitos | Status |
+| --- | --- | --- | --- |
+| T1 | Ler o plano e a referência da Vinheria; listar o que reaproveita e o que muda | — | Concluída |
+| T2 | `requirements.md` | todos | Concluída |
+| T3 | `design.md` | todos | Concluída |
+| T4 | `tasks.md` (este arquivo) | todos | Concluída |
+| T5 | **Parar e pedir aprovação da equipe** | — | Dispensada pelo usuário em 10/11 (execução autônoma com autorrevisão) |
 
 ## Fase B — Lógica pura e testes
 
-| Tarefa | Entrega | Requisitos | Status |
-| --- | --- | --- | --- |
-| T6 | `config.h`: pinos, perfis, limites, tempos, rede; cada valor justificado | R11, R18, R44 | Concluída |
-| T7 | `decisao.h`: `Leitura`, `Contexto`, `Decisao`, `avaliar()`, `liberar()` sem `Arduino.h` | R12 a R31 | Concluída |
-| T8 | `test_decisao.cpp`: um caso por requisito de lógica, nas duas configurações (`MODO_DEMO` 1 e 0) | R49 | Concluída |
+| Tarefa | Entrega | Requisitos |
+| --- | --- | --- |
+| T6 | `edge/cshield/config.h`: pinos, perfis, limites, tempos, rede, textos; cada valor com comentário de justificativa; cabeçalho com integrantes | R40, R41, R42, R45 |
+| T7 | `edge/cshield/decisao.h`: `Leitura`, `Contexto`, `Decisao` e `avaliar()` sem `Arduino.h` | R14 a R32, R46 |
+| T8 | `edge/test/test_decisao.cpp`: um caso por requisito (lista abaixo). Comando: `g++ -std=c++17 -Wall -Wextra -I edge/cshield edge/test/test_decisao.cpp -o /tmp/t && /tmp/t` | R14 a R32 |
+
+Casos de T8, com o requisito de cada um:
+
+- setpoint fora da faixa → BLOQUEIO imediato (R20)
+- degelo além de `DEGELO_MAX_MS` → BLOQUEIO (R21)
+- degelo fora do horário com hora válida → BLOQUEIO; sem hora válida → não bloqueia por horário (R22, R13)
+- aquecimento rápido com porta fechada → BLOQUEIO (R23)
+- o mesmo com porta aberta → só ATENCAO (R24, R15)
+- deriva dentro da tolerância → ATENCAO `DERIVA` (R16)
+- sensor NaN por 2 ciclos → FALHA_SENSOR (R7, R19a, R9)
+- sensor fora de -40 a 80 °C → FALHA_SENSOR (R7)
+- em FALHA_SENSOR a taxa não é avaliada, mas setpoint e degelo continuam (R29)
+- trava ignora nova ordem e marca `mudancaIgnorada` (R25)
+- liberação antes da trava mínima não libera; depois, com temperatura boa, sai do bloqueio (R26)
+- liberação com temperatura além da tolerância → CRITICO (R27)
+- liberação com setpoint ainda inválido → volta a BLOQUEIO e `bloqueios` sobe (R28)
+- temperatura além da tolerância por 2 ciclos → CRITICO, também para frio (R18, R9, D4)
+- um pico isolado não gera CRITICO (R9)
+- exposição térmica acumulada acima de `T_MAX` (R31)
+- prioridade: CRITICO vence BLOQUEIO, que vence FALHA_SENSOR, ATENCAO e NORMAL (R19)
+- relés: `cortaAquecedor` e `ligaVentoinha` verdadeiros em BLOQUEIO e CRITICO, falsos nos demais (R5, R17, R18)
+- cada perfil carrega os limites certos (R41)
 
 ## Fase C — Firmware
 
-| Tarefa | Entrega | Requisitos | Status |
-| --- | --- | --- | --- |
-| T9 | `sensores.h`: DHT22, validação, média, LDR, chaves e botão com debounce compartilhado | R6 a R10 | Concluída |
-| T10 | `atuadores.h`: relés em repouso no boot, LED RGB e buzzer por estado, sem `delay()` | R1, R32, R33 | Concluída |
-| T11 | `painel.h`: telas do LCD | R34 a R36 | Concluída |
-| T12 | `simulacao.h`: modelo térmico da demo | R48 | Concluída |
-| T13 | `rede.h`: payload novo e `minutoDoDia`; sem `subscribe` | R2 a R4, R39, R40 | Concluída |
-| T14 | `cshield.ino`: orquestra, Serial por ciclo e de evento | R37, R38, R45 | Concluída |
+| Tarefa | Entrega | Requisitos |
+| --- | --- | --- |
+| T9 | `sensores.h`: DHT22 a cada 2 s, validação, média móvel de 5, LDR em %, chave NORMAL/ATAQUE (setpoint 5 ou 45 °C), GPIO 18 | R6 a R13 |
+| T10 | `atuadores.h`: relés com `RELE_ATIVO_EM_LOW`, estado seguro no boot, LED RGB por estado, buzzer não bloqueante | R1, R5, R17, R18, R44 |
+| T11 | `painel.h`: telas do LCD 16x2 conforme o plano §0.3, sem redesenhar quando o conteúdo não muda | R42, R43 |
+| T12 | Botão de liberação: debounce, 3 s e barra de progresso de 16 blocos | R26 |
+| T13 | `rede.h`: Wi-Fi `Wokwi-GUEST`, NTP, MQTT só com `publish`, reconexão a cada 10 s, publicação a cada 5 s e imediata em mudança de estado | R2, R3, R4, R33 a R36 |
+| T14 | `cshield.ino`: cabeçalho do projeto; `setup()` e `loop()` só orquestrando; linha do Serial | R1, R39, R44, R45 |
 
-## Fase D — Wokwi e FIWARE
+Observação de ordem: T12 mexe em `sensores.h` (detecção do botão) e `painel.h` (barra). Fazer como duas edições separadas, um arquivo por commit.
 
-| Tarefa | Entrega | Requisitos | Status |
-| --- | --- | --- | --- |
-| T15 | `diagram.json`: chaves do controlador, relés, LEDs indicadores, LCD | R47 | Concluída |
-| T16 | `libraries.txt` conferido | — | Concluída |
-| T17 | `provisionar.sh` com os atributos novos | R41, R42 | Concluída |
-| T18 | Teste ponta a ponta (ou o passo a passo, se a EC2 estiver fora) | R43 | Passo a passo escrito; EC2 fora do ar em 10/11, não executado |
+## Fase D — Wokwi, FIWARE e teste ponta a ponta
+
+| Tarefa | Entrega | Requisitos |
+| --- | --- | --- |
+| T15 | `edge/cshield/diagram.json` com os componentes do design §7; conferir antes os nomes de pino de `wokwi-relay-module` e `wokwi-lcd1602` | R43 (e circuito da rubrica) |
+| T16 | `edge/cshield/libraries.txt`: `PubSubClient`, `DHT sensor library`, `Adafruit Unified Sensor`, `LiquidCrystal I2C` | — |
+| T17 | `edge/fiware/provisionar.sh` conforme R37 | R37 |
+| ~~T18~~ | **Fora da entrega** (controlador vulnerável); só se a equipe montar a maquete e pedir | — |
+| T18b | Teste ponta a ponta sem hardware: Wokwi rodando, `GET /v2/entities/urn:ngsi-ld:CShield:001`, `st` e `bq` mudam com a chave "Controlador"; comando e resposta em `docs/edge-testes-estados.md`. Se o agente não conseguir rodar o Wokwi, deixar o passo a passo para a equipe e dizer isso no relatório | R36, R38 |
 
 ## Fase E — Documentação
 
-| Tarefa | Entrega | Status |
+| Tarefa | Entrega | Requisitos |
 | --- | --- | --- |
-| T19 | `docs/edge-testes-estados.md` | Concluída |
-| T20 | `docs/edge-roteiro-video.md` | Concluída |
-| T21 | `README.md` | Concluída |
+| T20 | `docs/edge-testes-estados.md`: por estado, o que mexer no Wokwi, o que aparece em LED, buzzer, LCD, relés e Serial, coluna "resultado" para a equipe; mais a seção da T18b | R14 a R19a |
+| T21 | `docs/edge-roteiro-video.md`: roteiro de até 7 min na ordem da rubrica, com os itens 5 e 6 do plano §3 e o lembrete de manter a aba do Wokwi aberta e ligar a EC2 10 minutos antes de gravar | rubrica |
+| T19 | (baixa prioridade, por último) `docs/edge-ligacoes-maquete.md` | — |
 
-## Casos de teste da T8 e requisitos cobertos
+## Revisão final (plano §4)
 
-| Caso | Requisito |
+Rodar todas as verificações automáticas (testes, grep sem `subscribe`, grep sem `delay()`, `diagram.json` válido, pinos do `config.h` no diagrama, compilação se o `arduino-cli` existir), a conferência contra a rubrica e contra os princípios do produto, e entregar o relatório final com a linha das correções de escopo aplicadas.
+
+## Matriz de cobertura (requisito → tarefa)
+
+| Requisitos | Tarefas |
 | --- | --- |
-| 1. Degelo legítimo: ATENCAO `DEGELO`, tempo restante, relés em repouso | R14 |
-| 2. Degelo além de `DEGELO_MAX_MS`: BLOQUEIO `DEGELO_FORCADO` | R15 |
-| 3. Degelo fora do horário com hora válida (só com `MODO_DEMO` 0) | R15, R18 |
-| 4. Degelo sem hora válida: só vale a duração | R18 |
-| 5. Aquecedor com ventoinha ligada além do tempo: `AQUECEDOR_LONGO` | R16 |
-| 6. Subida rápida com porta fechada: `SUBIDA_RAPIDA` | R17 |
-| 7. A mesma subida com porta aberta: só ATENCAO | R13, R17 |
-| 8. Sensor NaN: 2 ciclos entram em FALHA_SENSOR, 1 não | R8, R20 |
-| 9. Sensor fora de -40 a 80 °C é inválido | R6 |
-| 10. Chaves mudam no bloqueio: `ci` sobe e relés não mudam | R24 |
-| 11. Termostato: começa ligado, desliga em 4 °C, mantém em 5 °C, liga em 6 °C | R23 |
-| 12. Bloqueio sem expiração: 2 h depois continua | R25 |
-| 13. Liberação com temperatura boa: NORMAL, relés em repouso | R26 |
-| 14. Liberação com temperatura ruim: continua bloqueado, recusada | R27 |
-| 15. Falha de sensor no bloqueio: ventoinha ligada | R29 |
-| 16. CRITICO confirmado: corta aquecedor e liga ventoinha | R19, R30 |
-| 17. Exposição: 10 °C por 2 min = 4 °C·min | R31 |
-| 18. Prioridade: CRITICO sobre BLOQUEIO, BLOQUEIO sobre FALHA | R21 |
-| 19. Após liberar, a subida antiga não rebloqueia | R28 |
-| 20. CRITICO sem bloqueio que volta à faixa: relés voltam ao repouso | R30 |
-| 21. Ventoinha efetiva: nunca menor que a comandada pelo controlador | R5 |
-| 22. NORMAL e ATENCAO por porta ou deriva com relés em repouso | R12, R13 |
+| R1, R5 | T10, T14 |
+| R2, R3, R4 | T13 |
+| R6 a R13 | T9 |
+| R14 a R32 | T7, T8 |
+| R33 a R36 | T13 |
+| R37 | T17 |
+| R38 | T18b |
+| R39 | T14 |
+| R40, R41, R42 | T6 |
+| R43 | T11, T15 |
+| R44 | T10, T14 |
+| R45 | T6 a T14 |
+| R46 | T7, T8 |
 
-## Registro da revisão final (plano §4)
+## Registro de mudanças
 
-- A lógica de decisão chegou a ser dividida em três arquivos, mas voltou a um único `decisao.h` (cerca de 360 linhas): três abas no Wokwi causaram erro de colagem e conflito de `#ifndef`.
-- `liberar()` recebe também `agoraMs`, porque ao liberar registra a amostra de temperatura atual no histórico da taxa.
-- Ao liberar, a contagem do tempo do aquecedor recomeça do zero: se o controlador ainda estiver mandando o degelo, o bloqueio só reabre depois de nova duração máxima.
-- Foram adicionados stubs em `edge/test/stubs/` para checar a sintaxe do firmware inteiro (`g++ -fsyntax-only`) sem o `arduino-cli`.
-- Testes: 89 verificações com `MODO_DEMO=1` e 92 com `MODO_DEMO=0`, todas passando.
+- 10/11/2026: tarefas criadas já com T18 fora, T18b incluída e T19 por último (correção de escopo C1 a C6), nomes C-Shield (N1 a N6) e LCD 16x2 (P2, P3).
+- 10/11/2026 (execução): T6 a T17, T18b (roteiro, não executado), T20 e T21 concluídas. T18 fora da entrega. T19 não feita (baixa prioridade, prazo). Compilação C++ e execução no Wokwi não verificadas por falta de `g++`/`arduino-cli` e de acesso ao simulador; ver o relatório final. Dúvidas D1 a D5 do `requirements.md` adotadas como estão.
+
+## Status de execução (10/11/2026)
+
+| Tarefa | Status | Evidência |
+| --- | --- | --- |
+| T6 `config.h` | Concluída | commit `feat(edge): adiciona config.h ...` |
+| T7 `decisao.h` | Concluída | commit da lógica pura; lógica exercitada por porta em JS (34 verificações, 0 falhas) |
+| T8 `test_decisao.cpp` | Concluída | g++ (WinLibs 16.2) com `-Wall -Wextra`, sem avisos: 95 verificações, 0 falhas (10/11) |
+| T9 a T14 firmware | Concluídas, **não compiladas** | revisão de código; compilar no Wokwi |
+| T15, T16 | Concluídas | `diagram.json` válido; 13 pinos conferidos; pinos de relé e LCD a conferir no Wokwi |
+| T17 `provisionar.sh` | Concluída | `bash -n` e `DRY_RUN=1` (8 corpos JSON válidos, nenhum com `commands`) |
+| T18 | Fora da entrega | correção C2 |
+| T18b | Roteiro pronto, **não executado** | EC2 sem resposta em 10/11 |
+| T19 | Não feita | baixa prioridade (C3) |
+| T20, T21 | Concluídas | `docs/edge-testes-estados.md`, `docs/edge-roteiro-video.md` |

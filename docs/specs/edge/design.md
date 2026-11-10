@@ -1,150 +1,212 @@
-# Design — Edge do C-Shield (versão 2)
+# Design — Edge do C-Shield
 
-Projeto: C-Shield · Nexus Vision · GS 2026.2 "CitizenTech" · FIAP. Requisitos: `requirements.md` (R1 a R49). Plano: `PLANO-CSHIELD.md`.
+Projeto: C-Shield · Nexus Vision · GS 2026.2 "CitizenTech" · FIAP. Requisitos: `requirements.md` (R1 a R46). Plano: `PLANO-CSHIELD.md`.
 
 ## 1. Módulos e responsabilidades
 
+Pasta do firmware: `edge/cshield/` (a pasta e o `cshield.ino` têm o mesmo nome, exigência do Arduino).
+
 | Arquivo | Responsabilidade | Depende de Arduino? | Requisitos |
 | --- | --- | --- | --- |
-| `config.h` | Todas as constantes: pinos, perfis, limites, tempos, rede, textos | Não | R11, R18, R44 |
-| `decisao.h` | Lógica pura: estados, estruturas, auxiliares, `liberar()` e `avaliar()` (regras D1 a D3, termostato, ordens ignoradas, exposição) | **Não** (testável com `g++`) | R6, R12 a R31 |
-| `sensores.h` | DHT22, LDR, chaves do controlador com debounce, botão, média móvel; monta a `Leitura` | Sim | R6 a R10 |
-| `atuadores.h` | Relés (repouso no boot), LED RGB por estado, buzzer com `millis()` | Sim | R1, R32, R33 |
-| `painel.h` | Telas do LCD 16x2 I2C; só reescreve quando o texto muda | Sim | R34 a R36 |
-| `simulacao.h` | Modelo térmico só da demo no Wokwi (`MODELO_TERMICO_DEMO`) | Não | R48 |
-| `rede.h` | Wi-Fi, NTP, MQTT **somente publish**, reconexão com sonda TCP, monta o payload | Sim | R2 a R4, R39, R40 |
-| `cshield.ino` | `setup()` e `loop()`: só orquestra; Serial | Sim | R37, R38, R45 |
+| `config.h` | Todas as constantes: pinos, perfis, limites, tempos, rede, textos | Não | R40, R41, R42 |
+| `decisao.h` | Lógica pura: estados, regras de bloqueio, taxa, exposição, trava, liberação | **Não** (testável com `g++`) | R14 a R32, R46 |
+| `sensores.h` | Leitura do DHT22, LDR, chave NORMAL/ATAQUE e GPIO 18; validação; média móvel; monta a `Leitura` | Sim | R6 a R13 |
+| `atuadores.h` | Relés (estado seguro no boot), LED RGB por estado, padrões do buzzer com `millis()` | Sim | R1, R5, R17, R18, R44 |
+| `painel.h` | Telas do LCD 16x2 I2C; só reescreve quando o conteúdo muda | Sim | R43, R42 |
+| `simulacao.h` | Modelo térmico só da demo no Wokwi: a ventoinha de emergência esfria a temperatura vista pela decisão (`MODELO_TERMICO_DEMO`); desligado na maquete | Não | (demo) |
+| `rede.h` | Wi-Fi, NTP (hora), MQTT **somente publish**, reconexão a cada 10 s, monta o payload | Sim | R2, R3, R4, R33 a R36 |
+| `cshield.ino` | `setup()` e `loop()`: só orquestra e imprime a linha do Serial | Sim | R1, R39, R44, R45 |
+| `test/test_decisao.cpp` | Um teste por requisito de decisão | Não | R14 a R32 |
+| `fiware/provisionar.sh` | Cria o device sem comandos e a subscription do STH-Comet | — | R37 |
 
-`decisao.h` passa de 250 linhas de propósito: fica num arquivo só para colar no Wokwi sem erro de aba (a divisão em três arquivos foi testada e desfeita).
+Regra de dependência: `decisao.h` inclui só `config.h` (que também não inclui `Arduino.h`). Os módulos de hardware chamam `decisao.h`; `decisao.h` nunca chama hardware. Assim a lógica que vale nota é testada no computador, sem placa.
 
 ## 2. Máquina de estados
 
-O bloqueio é uma condição persistente (`Contexto.bloqueado`) separada do estado mostrado. O estado mostrado segue a prioridade CRITICO > BLOQUEIO > FALHA_SENSOR > ATENCAO > NORMAL.
-
 ```mermaid
 stateDiagram-v2
-    [*] --> NORMAL
-    NORMAL --> ATENCAO: porta aberta, deriva ou degelo legítimo
-    ATENCAO --> NORMAL: condição some
-    NORMAL --> BLOQUEIO: D1, D2 ou D3
-    ATENCAO --> BLOQUEIO: D1, D2 ou D3
-    NORMAL --> FALHA_SENSOR: sensor inválido por 2 ciclos
-    FALHA_SENSOR --> NORMAL: sensor volta
-    BLOQUEIO --> CRITICO: temperatura além da tolerância por 2 ciclos
-    CRITICO --> BLOQUEIO: temperatura volta e o bloqueio persiste
-    NORMAL --> CRITICO: temperatura além da tolerância por 2 ciclos
-    CRITICO --> NORMAL: temperatura volta, sem bloqueio
-    BLOQUEIO --> NORMAL: botão 3 s com temperatura na faixa
-    BLOQUEIO --> BLOQUEIO: botão 3 s com temperatura fora da faixa (recusada)
+    [*] --> NORMAL: boot (relés desenergizados)
+    NORMAL --> ATENCAO: porta aberta ou deriva dentro da tolerância
+    ATENCAO --> NORMAL: porta fechada e temperatura na faixa
+    NORMAL --> BLOQUEIO: setpoint inválido, degelo inválido ou aquecimento rápido (porta fechada)
+    ATENCAO --> BLOQUEIO: mesmas regras
+    BLOQUEIO --> NORMAL: botão 3 s após trava, temperatura ok, ordem válida
+    BLOQUEIO --> CRITICO: botão 3 s após trava, temperatura além da tolerância
+    BLOQUEIO --> CRITICO: temperatura além da tolerância (confirmada)
+    NORMAL --> CRITICO: temperatura além da tolerância (confirmada)
+    ATENCAO --> CRITICO: temperatura além da tolerância (confirmada)
+    CRITICO --> NORMAL: temperatura volta à faixa (sem bloqueio ativo)
+    CRITICO --> BLOQUEIO: temperatura volta à tolerância com bloqueio ativo
+    NORMAL --> FALHA_SENSOR: DHT22 inválido por 2 ciclos
+    ATENCAO --> FALHA_SENSOR: DHT22 inválido por 2 ciclos
+    FALHA_SENSOR --> NORMAL: leitura válida volta
+    FALHA_SENSOR --> BLOQUEIO: regra 1 ou 2 violada
 ```
 
-## 3. Estruturas
+O estado final é sempre o de maior prioridade: **CRITICO > BLOQUEIO > FALHA_SENSOR > ATENCAO > NORMAL**. O bloqueio é uma *condição persistente* (`Contexto.bloqueado`), separada do estado exibido: no CRITICO com bloqueio ativo, os relés permanecem cortados mesmo depois que a temperatura volta para dentro da tolerância, até a liberação presencial.
+
+## 3. Estruturas de `decisao.h`
 
 ```cpp
 enum Estado { ST_NORMAL, ST_ATENCAO, ST_BLOQUEIO, ST_CRITICO, ST_FALHA_SENSOR };
-enum Motivo { MT_NENHUM, MT_PORTA_ABERTA, MT_DERIVA, MT_DEGELO, MT_DEGELO_FORCADO,
-              MT_AQUECEDOR_LONGO, MT_SUBIDA_RAPIDA, MT_TEMP_FORA_TOLERANCIA, MT_SENSOR_SEM_LEITURA };
 
+enum Motivo {
+  MT_NENHUM, MT_PORTA_ABERTA, MT_DERIVA, MT_SETPOINT_INVALIDO,
+  MT_DEGELO_FORA_HORARIO, MT_DEGELO_LONGO, MT_AQUECIMENTO_RAPIDO,
+  MT_TEMP_FORA_TOLERANCIA, MT_SENSOR_SEM_LEITURA
+};
+
+struct Perfil { float tMin; float tMax; float tolerancia; };
+
+// Entrada de um ciclo de decisão (montada por sensores.h; nos testes, preenchida à mão).
 struct Leitura {
-  bool valida; float temperatura; float umidade; float luzPct;
-  bool aquecedorCmd; bool ventoinhaCmd;       // o que o controlador está mandando
-  bool horaValida; int minutoDoDia;           // 0..1439
-  bool liberacao;                             // botão segurado por 3 s
+  bool  valida;          // DHT22 devolveu valor utilizável neste ciclo
+  float temperatura;     // °C, já suavizada pela média móvel
+  float umidade;         // %
+  float luzPct;          // % do LDR
+  bool  temSetpoint;     // false na maquete (sem chave de setpoint)
+  float setpoint;        // °C observado no controlador
+  bool  degelo;          // degelo comandado (GPIO 18)
+  bool  horaValida;      // hora do NTP disponível
+  int   hora;            // 0..23, só vale se horaValida
+  bool  liberacao;       // botão segurado por LIBERACAO_MS (calculado em sensores.h)
 };
 
+// Memória entre ciclos. Zerada por iniciarContexto().
 struct Contexto {
-  bool iniciado; unsigned long ultimoMs;
-  bool bloqueado; Motivo motivoBloqueio;
-  bool aquecedorAtivo; unsigned long inicioAquecedorMs;
-  bool termostatoLigado;
-  int bloqueios; int ignorados;               // bq e ci
-  float exposicao; int contCritico; int contInvalido;
-  float histTemp[N_AMOSTRAS_TAXA]; unsigned long histMs[N_AMOSTRAS_TAXA]; int histN;
-  bool ultimoAq; bool ultimoVt;
+  bool          bloqueado;        // condição persistente de bloqueio
+  unsigned long inicioBloqueioMs; // base da trava mínima
+  Motivo        motivoBloqueio;
+  int           bloqueios;        // contador `bq`
+  float         exposicao;        // °C·min acumulados (`ex`)
+  unsigned long ultimoMs;         // para integrar Δt
+  unsigned long inicioDegeloMs;   // 0 quando o degelo não está ativo
+  int           contCritico;      // ciclos seguidos além da tolerância
+  int           contInvalido;     // ciclos seguidos com sensor inválido
+  float         histTemp[N_AMOSTRAS_TAXA]; // histórico para a taxa (60 s)
+  unsigned long histMs[N_AMOSTRAS_TAXA];
+  int           histN;
+  float         ultimoSetpoint;   // para registrar mudanças ignoradas na trava
+  bool          ultimoDegelo;
 };
 
+// Saída de um ciclo de decisão.
 struct Decisao {
-  Estado estado; Motivo motivo;
-  bool cortarAquecedor; bool ligarVentoinha;  // relé 1 e relé 2
-  bool novoBloqueio; bool mudancaIgnorada;
-  bool liberou; bool liberacaoRecusada;
-  float taxaCPorMin; float exposicao;
-  unsigned long degeloRestanteMs;             // contagem do degelo legítimo
-  unsigned long aquecedorLigadoMs;            // para a linha de evento do Serial
+  Estado estado;
+  Motivo motivo;
+  bool   cortaAquecedor;   // relé 1 abre o NF
+  bool   ligaVentoinha;    // relé 2 fecha o NA
+  bool   novoBloqueio;     // true só no ciclo em que o bloqueio começou (gera evento)
+  bool   mudancaIgnorada;  // true quando a trava descartou uma ordem (registrar no Serial)
+  float  taxaCPorMin;      // para o Serial
+  float  exposicao;        // °C·min, para `ex`
+  unsigned long travaRestanteMs; // 0 quando a trava já passou
 };
 ```
 
-## 4. Assinaturas públicas
+## 4. Funções públicas
+
+`decisao.h` (sem Arduino):
 
 ```cpp
-// decisao.h (puro)
-void        iniciarContexto(Contexto&);
-bool        degeloNoHorario(const Leitura&);         // MODO_DEMO ou sem hora válida: true
-bool        liberar(const Leitura&, Contexto&);      // true se a liberação foi aceita
-Decisao     avaliar(const Leitura&, Contexto&, unsigned long agoraMs);
-const char* nomeEstado(Estado);
-const char* nomeMotivo(Motivo);
-
-// sensores.h
-void iniciarSensores();
-bool lerSensores(unsigned long agoraMs, Leitura& saida);   // true a cada 2 s
-void atualizarEntradas(unsigned long agoraMs);             // debounce das chaves e do botão, a cada volta
-bool botaoConsumirLiberacao();
-int  botaoProgressoPct();
-
-// atuadores.h
-void iniciarReles(); void iniciarLedRgb(); void iniciarBuzzer();
-void aplicarReles(bool cortarAquecedor, bool ligarVentoinha);
-void aplicarLed(Estado, unsigned long agoraMs);
-void aplicarBuzzer(Estado, unsigned long agoraMs);
-
-// painel.h
-void iniciarPainel(); void mostrarBoot();
-void mostrarEstado(const Decisao&, const Leitura&, unsigned long agoraMs);
-void mostrarRestaurando(); void mostrarLiberacao(int progressoPct);
-void mostrarLiberado();   void mostrarForaDaFaixa();
-
-// simulacao.h
-float modeloTermicoDemo(float medida, bool noControle, bool ventoinhaEfetiva, unsigned long agoraMs);
-
-// rede.h
-void iniciarRede(); void atualizarRede(unsigned long agoraMs);
-bool redeOk(); bool horaAtual(int& minutoDoDia);
-void montarPayload(char* buf, size_t n, const Leitura&, const Decisao&, const Contexto&);
-bool publicarSePreciso(const char* payload, Estado, bool& evento, unsigned long agoraMs);
+Perfil perfilAtivo();                                    // lê a constante PERFIL_* de config.h
+void   iniciarContexto(Contexto& ctx);
+Decisao avaliar(const Leitura& l, Contexto& ctx, unsigned long agoraMs);
+float  calcularTaxa(const Contexto& ctx);                // °C/min sobre JANELA_TAXA_MS
+bool   portaAberta(float luzPct);                        // luzPct > LIMIAR_PORTA_PCT
+bool   degeloPermitidoNaHora(int hora);                  // janelas de HORA_DEGELO_1/2
+const char* nomeEstado(Estado e);                        // "NORMAL", "BLOQUEIO"...
+const char* nomeMotivo(Motivo m);                        // "SETPOINT_INVALIDO"... ("-" se nenhum)
 ```
 
-## 5. Ordem dentro de `avaliar()`
+`sensores.h`:
 
-1. Sensor: registra a amostra, soma a exposição, atualiza `contCritico` e `contInvalido`.
-2. Aquecedor: marca `aquecedorAtivo` e `inicioAquecedorMs` (conta também durante o bloqueio).
-3. Liberação: `liberar()`. Aceita: `bloqueado = false`, termostato desligado, histórico descartado. Recusada: sinaliza.
-4. Bloqueado: mudança no aquecedor ou na ventoinha comandados incrementa `ignorados`. Não bloqueado: D1, D2 e D3 nessa ordem; a primeira violada abre o bloqueio, incrementa `bloqueios` e liga o termostato.
-5. Termostato: bloqueado ou crítico, com leitura válida, liga em `T_ALVO + H`, desliga em `T_ALVO - H`; sensor em falha no bloqueio liga.
-6. Estado pela prioridade; ATENCAO por porta, deriva ou degelo legítimo.
-7. Relés: `cortarAquecedor = bloqueado || critico`; `ligarVentoinha = (bloqueado || critico) && termostatoLigado`; fora disso os dois em repouso.
-8. Memória do ciclo (`ultimoAq`, `ultimoVt`, `ultimoMs`).
+```cpp
+void   iniciarSensores();
+bool   lerSensores(unsigned long agoraMs, Leitura& saida); // true quando houve novo ciclo (a cada 2 s)
+float  mediaMovel(float novo);                             // janela JANELA_MEDIA
+float  luminosidadePct();                                  // LDR → 0..100
+float  setpointObservado();                                // chave NORMAL/ATAQUE → 5 ou 45 °C (ou -999)
+bool   degeloComandado();                                  // GPIO 18
+bool   botaoLiberacaoSegurado(unsigned long agoraMs, int& progressoPct); // debounce + 3 s
+```
+
+`atuadores.h`:
+
+```cpp
+void iniciarReles();                          // PRIMEIRA coisa do setup(): desenergiza os dois
+void aplicarReles(bool cortaAquecedor, bool ligaVentoinha);
+void aplicarLed(Estado e, unsigned long agoraMs);     // cor e pisca por estado
+void aplicarBuzzer(Estado e, unsigned long agoraMs);  // padrões não bloqueantes
+```
+
+`painel.h`:
+
+```cpp
+void iniciarPainel();
+void mostrarBoot();
+void mostrarEstado(const Decisao& d, const Leitura& l, const Perfil& p, unsigned long agoraMs);
+void mostrarLiberacao(int progressoPct);      // "LIBERANDO..." + barra de 16 blocos
+void mostrarLiberado();                       // "BLOQUEIO" / "LIBERADO!" por LIBERADO_TELA_MS
+```
+
+`rede.h` (só publicação):
+
+```cpp
+void iniciarRede();                            // WiFi.begin + configTime (NTP); não bloqueia
+void atualizarRede(unsigned long agoraMs);     // reconexão a cada 10 s, sem travar
+bool redeOk();
+bool horaAtual(int& hora);                     // true se o NTP já respondeu
+void montarPayload(char* buf, size_t n, const Leitura& l, const Decisao& d, int bloqueios);
+void publicarSePreciso(const char* payload, Estado estado, unsigned long agoraMs);
+                                               // a cada 5 s e imediata na mudança de estado
+```
+
+## 5. Ordem de avaliação dentro de `avaliar()`
+
+1. **Sensor.** Se `!l.valida`, incrementa `contInvalido`; com 2 ciclos seguidos, candidato FALHA_SENSOR. Caso contrário zera `contInvalido` e atualiza o histórico e a exposição.
+2. **Trava ativa** (`ctx.bloqueado`): ordens novas do controlador são ignoradas e registradas (R25); só avalia liberação (passo 6) e CRITICO.
+3. **Regras de bloqueio** (só se não bloqueado), na ordem: setpoint (R20) → degelo longo (R21) → degelo fora do horário (R22) → aquecimento rápido (R23, pulada em FALHA_SENSOR e com porta aberta). A primeira violada liga `ctx.bloqueado`, grava `inicioBloqueioMs` e o motivo, incrementa `bloqueios` e marca `novoBloqueio`.
+4. **Exposição.** Se a temperatura passa de `T_MAX`, soma `(T − T_MAX) × Δt` (R31).
+5. **CRITICO.** Temperatura além da tolerância por `CONFIRMACOES` ciclos (R18, R9).
+6. **Liberação.** Se `ctx.bloqueado` e `l.liberacao` e a trava mínima passou: `bloqueado = false`. Se a temperatura está além da tolerância, o resultado é CRITICO (R27); se a ordem continua inválida, a reavaliação seguinte bloqueia de novo (R28).
+7. **Estado final** por prioridade (R19) e preenchimento de `cortaAquecedor` e `ligaVentoinha`: ambos verdadeiros se `bloqueado` ou CRITICO; falsos nos demais.
 
 ## 6. Fluxo de um ciclo do `loop()`
 
-```mermaid
-flowchart TD
-    A[loop] --> B[atualizarRede]
-    B --> C[atualizarEntradas: debounce das chaves e do botão]
-    C --> D{passaram 2 s?}
-    D -- sim --> E[lerSensores monta a Leitura]
-    E --> F[modeloTermicoDemo]
-    F --> G[avaliar]
-    G --> H[aplicarReles]
-    H --> I[Serial e payload]
-    D -- não --> J
-    I --> J[aplicarLed e aplicarBuzzer]
-    J --> K[LCD: boot, liberado, recusada, progresso, restaurando ou estado]
-    K --> L[publicarSePreciso]
-    L --> A
+```
+setup():
+  iniciarReles()            <- primeiro (R1)
+  Serial.begin, iniciarSensores, iniciarPainel, mostrarBoot
+  iniciarContexto(ctx)
+  iniciarRede()             <- WiFi.begin, configTime; não espera conexão
+
+loop():
+  agora = millis()
+  atualizarRede(agora)      <- reconexão a cada 10 s, sem bloquear
+  se lerSensores(agora, leitura):         // a cada 2 s
+      leitura.horaValida = horaAtual(leitura.hora)
+      decisao = avaliar(leitura, ctx, agora)
+      aplicarReles(decisao.cortaAquecedor, decisao.ligaVentoinha)
+      imprimirSerial(...)                 // linha da seção 2.7 do plano (R39)
+      montarPayload + publicarSePreciso   // imediata se mudou de estado ou novoBloqueio
+  aplicarLed(estado, agora)               // pisca e buzzer rodam a cada loop, com millis()
+  aplicarBuzzer(estado, agora)
+  painel: se botão segurado → mostrarLiberacao(progresso)
+          senão mostrarEstado(...) (só reescreve se o conteúdo mudou)
 ```
 
-## 7. Ligação dos relés no Wokwi
+O `loop()` roda livre; só a decisão, o Serial e a publicação acontecem a cada 2 s. Nenhum passo bloqueia: sem `delay()`, e a rede é tentada com intervalo.
 
-- **Relé 1** (GPIO 23): `COM` no pino 3 da chave do controlador (sinal de aquecedor, alto em DEGELO); `NC` → 220 Ω → LED laranja → GND. Em repouso o sinal passa; acionado, abre e o LED apaga.
-- **Relé 2** (GPIO 33): `NC` no pino 1 da chave do controlador (sinal de ventoinha, alto em NORMAL); `NO` no 3V3; `COM` → 220 Ω → LED azul → GND. Em repouso o LED segue o controlador; acionado, recebe 3V3 e acende.
+## 7. Wokwi (`diagram.json`)
+
+Componentes: `wokwi-esp32-devkit-v1`, `wokwi-dht22`, `wokwi-photoresistor-sensor`, `wokwi-potentiometer` (setpoint, rótulo "Setpoint do controlador"), `wokwi-slide-switch` (degelo, rótulo "Degelo do controlador"), `wokwi-pushbutton` (liberação), dois `wokwi-relay-module`, `wokwi-rgb-led` com três resistores de 220 Ω, `wokwi-buzzer`, `wokwi-lcd1602` com `"pins": "i2c"` e dois LEDs indicadores (laranja "aquecedor" no NF do relé 1, azul "ventoinha" no NA do relé 2) com resistor de 220 Ω. Cores de fio: vermelho para 3V3/5V, preto para GND, verde para sinais, azul para I2C. O LCD no Wokwi é alimentado em 5 V (VIN do ESP32).
+
+Ressalva: os nomes de pino dos componentes `wokwi-relay-module` e `wokwi-lcd1602` devem ser conferidos na documentação do Wokwi antes de escrever o `diagram.json` (T15), pois o `diagram.json` da Vinheria não usa nenhum dos dois.
+
+## 8. Decisões de projeto
+
+- **`bloqueado` separado do `estado`.** Permite CRITICO com bloqueio ativo mantendo os relés cortados (R18) e reaplicar o bloqueio depois da liberação (R28).
+- **Liberação como booleano na `Leitura`.** O debounce e os 3 s vivem em `sensores.h`; `decisao.h` só vê `liberacao`. Assim o teste de liberação não precisa simular botão.
+- **Taxa e exposição dentro do `Contexto`.** O histórico de 60 s fica em `decisao.h` (vetor fixo `N_AMOSTRAS_TAXA`), sem alocação dinâmica, para ser testável e seguro em microcontrolador.
+- **Tempo injetado (`agoraMs`).** `avaliar()` não chama `millis()`; os testes controlam o relógio.
