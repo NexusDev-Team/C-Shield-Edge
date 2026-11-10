@@ -52,15 +52,21 @@ static bool redeOk() { return WiFi.status() == WL_CONNECTED && mqtt.connected();
 // Tenta reconectar a cada INTERVALO_RECONEXAO_MS, sem insistir no resto do tempo.
 // Chamar a cada volta do loop().
 static void atualizarRede(unsigned long agoraMs) {
-  if (WiFi.status() == WL_CONNECTED && mqtt.connected()) { mqtt.loop(); return; }
-  if (!primeiraTentativa && (agoraMs - ultimaTentativaMs) < INTERVALO_RECONEXAO_MS) return;
+  const bool wifiOk = (WiFi.status() == WL_CONNECTED);
+  if (wifiOk && mqtt.connected()) { mqtt.loop(); return; }
+  const bool vencido = (agoraMs - ultimaTentativaMs) >= INTERVALO_RECONEXAO_MS;
+
+  if (!wifiOk) {
+    // A primeira conexão já foi pedida em iniciarRede(); pedir de novo antes do intervalo
+    // interrompe a tentativa em andamento (erro "sta is connecting").
+    if (vencido) { ultimaTentativaMs = agoraMs; WiFi.begin(WIFI_SSID, WIFI_SENHA); }
+    return;
+  }
+
+  // Wi-Fi no ar: tenta o broker já na primeira vez e depois a cada intervalo.
+  if (!primeiraTentativa && !vencido) return;
   primeiraTentativa = false;
   ultimaTentativaMs = agoraMs;
-
-  if (WiFi.status() != WL_CONNECTED) {
-    WiFi.begin(WIFI_SSID, WIFI_SENHA);
-    return;                            // o MQTT tenta no próximo intervalo, com Wi-Fi no ar
-  }
   Serial.print("Conectando ao broker MQTT... ");
   Serial.println(mqtt.connect(ID_DEVICE) ? "ok" : "falhou");
 }
