@@ -14,7 +14,7 @@
  *
  *   DHT22         temperatura e umidade próprias do C-Shield
  *   LDR           luminosidade (porta aberta)
- *   potenciômetro setpoint observado (só no Wokwi)
+ *   chave GPIO 32 setpoint observado: NORMAL ou ATAQUE (só no Wokwi)
  *   GPIO 18       degelo comandado pelo controlador
  *   botão         liberação presencial (segurar por LIBERACAO_MS)
  *
@@ -53,12 +53,11 @@ static float luminosidadePct() {
   return (float)map(adc, 0, 4095, 100, 0);
 }
 
-// Converte o potenciômetro (0 a 4095) para o setpoint em °C, entre SETPOINT_MIN_POT e
-// SETPOINT_MAX_POT. Na maquete (TEM_POT_SETPOINT = 0) devolve "ausente".
+// Setpoint que o controlador está mandando, lido da chave NORMAL/ATAQUE (nível alto =
+// ATAQUE). Na maquete (TEM_POT_SETPOINT = 0) devolve "ausente".
 static float setpointObservado() {
 #if TEM_POT_SETPOINT
-  int adc = analogRead(PIN_POT_SP);
-  return SETPOINT_MIN_POT + (SETPOINT_MAX_POT - SETPOINT_MIN_POT) * ((float)adc / 4095.0f);
+  return digitalRead(PIN_CHAVE_SP) == HIGH ? SETPOINT_DEMO_ATAQUE : SETPOINT_DEMO_NORMAL;
 #else
   return SETPOINT_AUSENTE;
 #endif
@@ -110,6 +109,7 @@ static bool botaoConsumirLiberacao() {
 static void iniciarSensores() {
   dht.begin();
   pinMode(PIN_DEGELO, INPUT);
+  pinMode(PIN_CHAVE_SP, INPUT);
   pinMode(PIN_BOTAO, INPUT_PULLUP);
 }
 

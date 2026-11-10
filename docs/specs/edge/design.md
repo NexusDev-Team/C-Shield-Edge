@@ -10,7 +10,7 @@ Pasta do firmware: `edge/cshield/` (a pasta e o `cshield.ino` têm o mesmo nome,
 | --- | --- | --- | --- |
 | `config.h` | Todas as constantes: pinos, perfis, limites, tempos, rede, textos | Não | R40, R41, R42 |
 | `decisao.h` | Lógica pura: estados, regras de bloqueio, taxa, exposição, trava, liberação | **Não** (testável com `g++`) | R14 a R32, R46 |
-| `sensores.h` | Leitura do DHT22, LDR, potenciômetro e GPIO 18; validação; média móvel; monta a `Leitura` | Sim | R6 a R13 |
+| `sensores.h` | Leitura do DHT22, LDR, chave NORMAL/ATAQUE e GPIO 18; validação; média móvel; monta a `Leitura` | Sim | R6 a R13 |
 | `atuadores.h` | Relés (estado seguro no boot), LED RGB por estado, padrões do buzzer com `millis()` | Sim | R1, R5, R17, R18, R44 |
 | `painel.h` | Telas do LCD 16x2 I2C; só reescreve quando o conteúdo muda | Sim | R43, R42 |
 | `rede.h` | Wi-Fi, NTP (hora), MQTT **somente publish**, reconexão a cada 10 s, monta o payload | Sim | R2, R3, R4, R33 a R36 |
@@ -63,7 +63,7 @@ struct Leitura {
   float temperatura;     // °C, já suavizada pela média móvel
   float umidade;         // %
   float luzPct;          // % do LDR
-  bool  temSetpoint;     // false na maquete (sem potenciômetro)
+  bool  temSetpoint;     // false na maquete (sem chave de setpoint)
   float setpoint;        // °C observado no controlador
   bool  degelo;          // degelo comandado (GPIO 18)
   bool  horaValida;      // hora do NTP disponível
@@ -125,7 +125,7 @@ void   iniciarSensores();
 bool   lerSensores(unsigned long agoraMs, Leitura& saida); // true quando houve novo ciclo (a cada 2 s)
 float  mediaMovel(float novo);                             // janela JANELA_MEDIA
 float  luminosidadePct();                                  // LDR → 0..100
-float  setpointObservado();                                // potenciômetro → °C (ou -999)
+float  setpointObservado();                                // chave NORMAL/ATAQUE → 5 ou 45 °C (ou -999)
 bool   degeloComandado();                                  // GPIO 18
 bool   botaoLiberacaoSegurado(unsigned long agoraMs, int& progressoPct); // debounce + 3 s
 ```

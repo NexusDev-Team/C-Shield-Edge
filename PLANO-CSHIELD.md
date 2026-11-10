@@ -162,7 +162,7 @@ docs/
 | --- | --- | --- |
 | GPIO 4 | DHT22 (dados) | Temperatura e umidade próprias |
 | GPIO 34 | LDR (saída analógica) | Porta aberta |
-| GPIO 35 | Potenciômetro (só Wokwi) | Setpoint que o controlador está mandando |
+| GPIO 32 | Chave NORMAL/ATAQUE (só Wokwi) | Setpoint que o controlador está mandando (5 ou 45 °C) |
 | GPIO 18 | Chave deslizante (Wokwi) / fio do controlador (maquete) | Degelo comandado pelo controlador |
 | GPIO 19 | Botão, `INPUT_PULLUP` | Liberação presencial (segurar 3 s) |
 | GPIO 23 | Relé 1, contato **NF** | Corta o aquecedor/degelo no bloqueio |
@@ -181,7 +181,7 @@ No Wokwi, o relé não liga nada. Colocar um **LED laranja "aquecedor"** no cont
 - `LIMIAR_PORTA_PCT = 40`: luminosidade acima disso significa porta aberta.
 - Degelo: `DEGELO_MAX_MS` (30 min) e horários permitidos (`HORA_DEGELO_1 = 6`, `HORA_DEGELO_2 = 18`). Se não houver hora válida por NTP (offline), vale só a duração máxima.
 - `TRAVA_MS`: 30 min. Com `MODO_DEMO 1`, cai para 60 s, para o vídeo.
-- `SETPOINT_MIN_POT = -30`, `SETPOINT_MAX_POT = 60`: faixa para converter o potenciômetro em °C.
+- `SETPOINT_DEMO_NORMAL = 5`, `SETPOINT_DEMO_ATAQUE = 45`: setpoints que a chave do Wokwi representa.
 - `TEM_POT_SETPOINT`: 1 no Wokwi, 0 na maquete.
 - `RELE_ATIVO_EM_LOW`: muitos módulos físicos acionam em LOW; deixar configurável.
 - Rede: `SSID = "Wokwi-GUEST"`, `BROKER_MQTT` (placeholder; o IP elástico da EC2 da Vinheria era `3.215.3.216`, confirmar se ainda existe), porta 1883, `ID_DEVICE = "cshield001"`.

@@ -20,7 +20,7 @@ Convenção: "o C-Shield" é o firmware em `edge/cshield/`. Cada requisito tem u
 - **R8 — Suavização.** O C-SHIELD DEVE calcular a temperatura usada nas decisões como média móvel das últimas `JANELA_MEDIA` (5) leituras válidas.
 - **R9 — Confirmação.** O C-SHIELD DEVE exigir `CONFIRMACOES` (2) ciclos consecutivos com a mesma condição antes de declarar CRITICO ou FALHA_SENSOR, para ignorar picos isolados.
 - **R10 — Porta aberta.** QUANDO a luminosidade do LDR (em %) for maior que `LIMIAR_PORTA_PCT` (40), O C-SHIELD DEVE considerar a porta aberta.
-- **R11 — Setpoint observado.** QUANDO `TEM_POT_SETPOINT` for 1, O C-SHIELD DEVE converter o potenciômetro (GPIO 35) para °C entre `SETPOINT_MIN_POT` (-30) e `SETPOINT_MAX_POT` (60). QUANDO for 0 (maquete), DEVE considerar o setpoint ausente (`sp = -999`) e NÃO DEVE avaliar a regra de setpoint (R20).
+- **R11 — Setpoint observado.** QUANDO `TEM_POT_SETPOINT` for 1, O C-SHIELD DEVE ler a chave NORMAL/ATAQUE (GPIO 32) e tratar o setpoint como `SETPOINT_DEMO_NORMAL` (5 °C) ou `SETPOINT_DEMO_ATAQUE` (45 °C). QUANDO for 0 (maquete), DEVE considerar o setpoint ausente (`sp = -999`) e NÃO DEVE avaliar a regra de setpoint (R20).
 - **R12 — Degelo comandado.** O C-SHIELD DEVE ler o nível do GPIO 18 como "degelo comandado" (1 = ligado).
 - **R13 — Hora válida.** QUANDO houver hora obtida por NTP, O C-SHIELD DEVE tratá-la como válida e usá-la nos horários de degelo. QUANDO não houver (offline), DEVE valer somente a duração máxima do degelo (R21).
 
@@ -62,7 +62,7 @@ Prioridade: **CRITICO > BLOQUEIO > FALHA_SENSOR > ATENCAO > NORMAL** (R19).
 - **R35 — Cadência.** O C-SHIELD DEVE publicar a cada `PERIODO_PUBLICACAO_MS` (5 s) e imediatamente a cada mudança de estado.
 - **R36 — Publicação a partir do Wokwi.** QUANDO rodando no Wokwi, O C-SHIELD DEVE conectar no Wi-Fi `Wokwi-GUEST` (sem senha) e publicar no broker configurado em `BROKER_MQTT`, de modo que o Orion receba os atributos.
 - **R37 — Provisionamento.** O `provisionar.sh` DEVE criar o device `cshield001` (`entity_name` `urn:ngsi-ld:CShield:001`, `entity_type` `CShield`, protocolo `PDI-IoTA-UltraLight`, transporte MQTT, **só `attributes`, sem `commands`**), tratar HTTP 409 como sucesso e criar a subscription do Orion para o STH-Comet (porta 8666) dos atributos `t`, `h`, `l`, `st`, `bq` e `ex`. Headers: `fiware-service: smart`, `fiware-servicepath: /`. O IP da EC2 vem de uma variável no topo do script.
-- **R38 — Ponta a ponta.** QUANDO o setpoint do potenciômetro sair da faixa com o Wokwi rodando, `GET /v2/entities/urn:ngsi-ld:CShield:001` DEVE mostrar `st` = `BLOQUEIO` e `bq` incrementado (tarefa T18b).
+- **R38 — Ponta a ponta.** QUANDO a chave "Controlador" for para ATAQUE com o Wokwi rodando, `GET /v2/entities/urn:ngsi-ld:CShield:001` DEVE mostrar `st` = `BLOQUEIO` e `bq` incrementado (tarefa T18b).
 
 ## 7. Serial, configuração e código
 

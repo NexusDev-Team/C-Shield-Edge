@@ -50,7 +50,7 @@ Casos de T8, com o requisito de cada um:
 
 | Tarefa | Entrega | Requisitos |
 | --- | --- | --- |
-| T9 | `sensores.h`: DHT22 a cada 2 s, validação, média móvel de 5, LDR em %, potenciômetro em °C, GPIO 18 | R6 a R13 |
+| T9 | `sensores.h`: DHT22 a cada 2 s, validação, média móvel de 5, LDR em %, chave NORMAL/ATAQUE (setpoint 5 ou 45 °C), GPIO 18 | R6 a R13 |
 | T10 | `atuadores.h`: relés com `RELE_ATIVO_EM_LOW`, estado seguro no boot, LED RGB por estado, buzzer não bloqueante | R1, R5, R17, R18, R44 |
 | T11 | `painel.h`: telas do LCD 16x2 conforme o plano §0.3, sem redesenhar quando o conteúdo não muda | R42, R43 |
 | T12 | Botão de liberação: debounce, 3 s e barra de progresso de 16 blocos | R26 |
@@ -67,7 +67,7 @@ Observação de ordem: T12 mexe em `sensores.h` (detecção do botão) e `painel
 | T16 | `edge/cshield/libraries.txt`: `PubSubClient`, `DHT sensor library`, `Adafruit Unified Sensor`, `LiquidCrystal I2C` | — |
 | T17 | `edge/fiware/provisionar.sh` conforme R37 | R37 |
 | ~~T18~~ | **Fora da entrega** (controlador vulnerável); só se a equipe montar a maquete e pedir | — |
-| T18b | Teste ponta a ponta sem hardware: Wokwi rodando, `GET /v2/entities/urn:ngsi-ld:CShield:001`, `st` e `bq` mudam com o potenciômetro; comando e resposta em `docs/edge-testes-estados.md`. Se o agente não conseguir rodar o Wokwi, deixar o passo a passo para a equipe e dizer isso no relatório | R36, R38 |
+| T18b | Teste ponta a ponta sem hardware: Wokwi rodando, `GET /v2/entities/urn:ngsi-ld:CShield:001`, `st` e `bq` mudam com a chave "Controlador"; comando e resposta em `docs/edge-testes-estados.md`. Se o agente não conseguir rodar o Wokwi, deixar o passo a passo para a equipe e dizer isso no relatório | R36, R38 |
 
 ## Fase E — Documentação
 

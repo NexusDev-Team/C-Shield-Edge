@@ -36,8 +36,8 @@ static const char* const NOME_PRODUTO = "C-Shield";
 // Mude para 0 na versão "de produção".
 #define MODO_DEMO 1
 
-// 1 no Wokwi (potenciômetro representa o setpoint que o controlador manda);
-// 0 na maquete física, onde não há potenciômetro e o setpoint fica ausente.
+// 1 no Wokwi (uma chave de 2 posições representa o setpoint que o controlador manda:
+// NORMAL ou ATAQUE); 0 na maquete física, onde não há chave e o setpoint fica ausente.
 #define TEM_POT_SETPOINT 1
 
 // Muitos módulos de relé físicos acionam em LOW. 0 = aciona em HIGH (Wokwi).
@@ -49,7 +49,7 @@ static const char* const NOME_PRODUTO = "C-Shield";
 
 const int PIN_DHT       = 4;   // DHT22: temperatura e umidade próprias
 const int PIN_LDR       = 34;  // LDR (saída analógica): porta aberta
-const int PIN_POT_SP    = 35;  // potenciômetro (só Wokwi): setpoint do controlador
+const int PIN_CHAVE_SP  = 32;  // chave NORMAL/ATAQUE (só Wokwi): setpoint do controlador
 const int PIN_DEGELO    = 18;  // chave (Wokwi) ou fio do controlador: degelo comandado
 const int PIN_BOTAO     = 19;  // botão de liberação presencial (INPUT_PULLUP)
 const int PIN_RELE_AQUEC = 23; // relé 1, contato NF: corta o aquecedor/degelo
@@ -166,13 +166,14 @@ const unsigned long LIBERACAO_MS = 3000;
 const unsigned long DEBOUNCE_MS = 50;
 
 // ---------------------------------------------------------------------------
-// Setpoint observado (potenciômetro do Wokwi)
+// Setpoint observado (chave de 2 posições do Wokwi)
 // ---------------------------------------------------------------------------
 
-// Faixa do potenciômetro convertida para °C: cobre de congelado profundo a quente
-// o bastante para simular um ataque.
-const float SETPOINT_MIN_POT = -30.0f;
-const float SETPOINT_MAX_POT = 60.0f;
+// Chave em NORMAL: o controlador manda um setpoint dentro da faixa do perfil vacina
+// (2 a 8 °C). Chave em ATAQUE: manda um valor quente, fora da faixa, o que dispara o
+// bloqueio. Dois valores fixos evitam o ajuste fino que o potenciômetro exigia.
+const float SETPOINT_DEMO_NORMAL = 5.0f;
+const float SETPOINT_DEMO_ATAQUE = 45.0f;
 
 // Valor enviado em `sp` quando não há setpoint observado.
 const float SETPOINT_AUSENTE = -999.0f;

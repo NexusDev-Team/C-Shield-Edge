@@ -49,7 +49,7 @@ struct Leitura {
   float temperatura;  // °C, já suavizada pela média móvel (só vale se valida)
   float umidade;      // %
   float luzPct;       // % do LDR (independe do DHT22)
-  bool  temSetpoint;  // false na maquete (sem potenciômetro)
+  bool  temSetpoint;  // false na maquete (sem chave de setpoint)
   float setpoint;     // °C que o controlador comercial está mandando
   bool  degelo;       // degelo comandado pelo controlador
   bool  horaValida;   // hora do NTP disponível

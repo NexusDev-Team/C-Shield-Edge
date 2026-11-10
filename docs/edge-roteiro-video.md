@@ -36,7 +36,7 @@ Projeto C-Shield · Nexus Vision · GS 2026.2 "CitizenTech". Vídeo no YouTube d
 | ESP32 | "O cérebro. Roda a política de decisão e funciona offline." |
 | DHT22 (GPIO 4) | "Mede temperatura e umidade próprias, independentes do controlador, que é justamente o que pode mentir." |
 | LDR (GPIO 34) | "Detecta porta aberta pela luz. Porta aberta justifica o calor e muda a resposta." |
-| Potenciômetro (GPIO 35) | "No simulador, representa o setpoint que o controlador comercial está mandando. É o nosso 'ataque'." |
+| Chave "Controlador" NORMAL/ATAQUE (GPIO 32) | "No simulador, representa o que o controlador comercial está mandando. Em ATAQUE, ele manda um setpoint perigoso. É o nosso 'ataque'." |
 | Chave deslizante (GPIO 18) | "Representa o degelo comandado pelo controlador. Degelo fora de hora ou longo demais é suspeito." |
 | Botão (GPIO 19) | "A única forma de liberar um bloqueio, e só presencial: segurar por 3 segundos." |
 | Relé 1, contato NF (GPIO 23) | "Fica entre o controlador e o aquecedor. Energizado, abre o circuito e corta o aquecimento. Desenergizado, fica fechado: se o C-Shield falhar, o equipamento funciona como antes." |
@@ -72,14 +72,14 @@ Projeto C-Shield · Nexus Vision · GS 2026.2 "CitizenTech". Vídeo no YouTube d
 
 ## 5. A simulação passando por todos os estados (4:15 a 6:15 · 120 s)
 
-**Na tela:** o Wokwi com o Serial Monitor visível, o LCD, o LED RGB e os dois LEDs indicadores em quadro. O "ataque" é **girar o potenciômetro do setpoint** ou **ligar a chave do degelo**; os LEDs laranja e azul mostram o aquecedor cortado e a ventoinha ligada.
+**Na tela:** o Wokwi com o Serial Monitor visível, o LCD, o LED RGB e os dois LEDs indicadores em quadro. O "ataque" é **mover a chave "Controlador" para ATAQUE** ou **ligar a chave do degelo**; os LEDs laranja e azul mostram o aquecedor cortado e a ventoinha ligada.
 
 | Tempo | Ação | O que mostrar e dizer |
 | --- | --- | --- |
 | 4:15 a 4:30 | Ponto de partida | NORMAL: LED verde, LCD `C-Shield NORMAL`, LED laranja (aquecedor) aceso, azul apagado. |
 | 4:30 a 4:45 | Subir o LDR | ATENCAO por porta aberta: LED amarelo, LCD `PORTA ABERTA`, bipe curto. Fechar a porta. |
-| 4:45 a 5:15 | **Girar o potenciômetro** para fora da faixa | O ataque. BLOQUEIO imediato: LCD `ATAQUE BLOQUEADO`, LED vermelho piscando, buzzer intermitente, **LED laranja apaga** (aquecedor cortado), **LED azul acende** (ventoinha). Serial mostra `BLOQUEIO (SETPOINT_INVALIDO)` e o valor recebido. "Sem esperar a temperatura subir." |
-| 5:15 a 5:30 | Girar o potenciômetro de novo durante a trava | Serial: `ordem do controlador IGNORADA (trava ativa)`. |
+| 4:45 a 5:15 | **Mover a chave "Controlador" para ATAQUE** | O ataque. BLOQUEIO imediato: LCD `ATAQUE BLOQUEADO`, LED vermelho piscando, buzzer intermitente, **LED laranja apaga** (aquecedor cortado), **LED azul acende** (ventoinha). Serial mostra `BLOQUEIO (SETPOINT_INVALIDO)` e o valor recebido. "Sem esperar a temperatura subir." |
+| 5:15 a 5:30 | Mexer na chave "Controlador" de novo durante a trava | Serial: `ordem do controlador IGNORADA (trava ativa)`. |
 | 5:30 a 5:45 | Subir o DHT22 além de 9 °C | CRITICO: LED vermelho fixo, buzzer contínuo, LCD `PRODUTO EM RISCO` com a exposição térmica. Voltar o DHT22 a 5 °C. |
 | 5:45 a 6:00 | Desconectar o DHT22 | FALHA_SENSOR: LED amarelo piscando, LCD `FALHA NO SENSOR`, bipe duplo. Reconectar. |
 | 6:00 a 6:15 | Trazer o setpoint de volta, esperar `trava=0s`, **segurar o botão por 3 s** | LCD `LIBERANDO...` com a barra enchendo; volta a NORMAL. "Só presencial." |
