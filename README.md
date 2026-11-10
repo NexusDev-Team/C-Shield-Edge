@@ -18,3 +18,48 @@ Repositório da camada de Edge do C-Shield (Global Solution 2026.2 "CitizenTech"
 | **Links** | Repositório do site (`c-shield-web`): [link] · Repositório do Edge (`c-shield-edge`): [link] · Wokwi: [link] · Site publicado: [link] |
 | **Indicador de impacto** | Tempo entre o ataque e a resposta (na Europa, 3h30; com o C-Shield, segundos) · exposição térmica evitada (°C·min) · ordens perigosas bloqueadas |
 | **ODS** | 3 Saúde e bem-estar · 9 Indústria, inovação e infraestrutura · 2 Fome zero |
+
+## Como o C-Shield funciona (versão 2)
+
+O C-Shield fica entre o controlador comercial e os componentes da geladeira (o aquecedor de degelo e a ventoinha). Ele mede com o DHT22 e o LDR e observa se o controlador está ligando o aquecedor e a ventoinha. Reconhece o ataque por três sinais:
+
+- **D1.** Aquecedor ligado com a ventoinha desligada fora do degelo permitido (6h e 18h, 30 minutos cada, ou por mais que a duração máxima).
+- **D2.** Aquecedor ligado com a ventoinha ligada por tempo demais.
+- **D3.** Temperatura subindo rápido (acima de 0,5 °C/min, valor provisório) com a porta fechada.
+
+Ao reconhecer um deles, **assume o controle local**: o relé 1 corta o aquecedor, o controlador passa a ser ignorado (cada ordem ignorada é contada) e o relé 2 faz a ventoinha trabalhar como termostato de emergência, ligando em alvo + 1 °C e desligando em alvo − 1 °C. O bloqueio **não expira**: só termina quando alguém segura o botão do aparelho por 3 segundos, e só se a temperatura estiver dentro da faixa do produto. O C-Shield nunca desliga a refrigeração: só corta o aquecedor e acrescenta ventoinha. Se o ESP32 desligar, os relés ficam em repouso e a geladeira volta a obedecer ao controlador.
+
+O firmware **só envia dados**. Não há `subscribe`, `setCallback`, atualização remota nem servidor.
+
+## Abrir no Wokwi
+
+1. Crie um projeto ESP32 no Wokwi e copie para ele todos os arquivos de `edge/cshield/`: `cshield.ino`, `config.h`, `decisao.h`, `sensores.h`, `atuadores.h`, `painel.h`, `rede.h`, `simulacao.h`, `diagram.json` e `libraries.txt`.
+2. Inicie a simulação. No ponto de partida, a chave "Controlador: ventoinha" fica à direita (ligada) e a "Controlador: aquecedor" à esquerda (desligada).
+3. Para simular um ataque, ligue o aquecedor e desligue a ventoinha por mais de 15 s (modo demonstração). Para liberar, segure o botão verde por 3 s. A tabela completa de testes está em `docs/edge-testes-estados.md` e o roteiro do vídeo em `docs/edge-roteiro-video.md`.
+
+O Wokwi só publica no FIWARE com a aba aberta e a simulação ativa. O broker MQTT está em `BROKER_MQTT` no `config.h` (placeholder: confirmar o IP elástico da EC2).
+
+## Testes da lógica
+
+A decisão (`decisao.h`) não usa Arduino e roda no computador. Com `g++` (no Windows, o do WinLibs):
+
+```bash
+g++ -std=c++17 -Wall -Wextra -I edge/cshield edge/test/test_decisao.cpp -o t && ./t
+g++ -std=c++17 -Wall -Wextra -DMODO_DEMO=0 -I edge/cshield edge/test/test_decisao.cpp -o t0 && ./t0
+```
+
+A segunda compilação cobre o modo de produção (degelo de 30 min e janelas de horário). Para checar a sintaxe do firmware inteiro sem as bibliotecas do ESP32:
+
+```bash
+g++ -std=c++17 -fsyntax-only -Wall -Wextra -x c++ -I edge/test/stubs -I edge/cshield edge/cshield/cshield.ino
+```
+
+## FIWARE
+
+Device `cshield001`, entidade `urn:ngsi-ld:CShield:001`, tipo `CShield`, headers `fiware-service: smart` e `fiware-servicepath: /`. Tópico de publicação `/TEF/cshield001/attrs`, payload UltraLight:
+
+```
+t|4.8|h|81|l|12|aq|0|vt|1|vf|1|st|NORMAL|mt|-|bq|0|ci|0|ex|0
+```
+
+`aq` e `vt` são o aquecedor e a ventoinha que o controlador manda; `vf`, a ventoinha efetiva depois do C-Shield; `bq`, os bloqueios; `ci`, os comandos ignorados; `ex`, a exposição térmica em °C·min. Para cadastrar o device (só atributos, sem comandos) e as subscriptions do STH-Comet: `FIWARE_HOST=<ip> bash edge/fiware/provisionar.sh`.
