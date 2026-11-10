@@ -330,6 +330,7 @@ static void teste_critico() {  // R18, R9
     avaliar(l, ctx, T0);
     Decisao d = avaliar(l, ctx, T0 + PASSO);
     CHECK(d.estado == ST_CRITICO);
+    CHECK(!d.cortaAquecedor && !d.ligaVentoinha);   // frio: aquecedor liberado, ventoinha desligada (R52)
   }
   {
     Contexto ctx; iniciarContexto(ctx);          // pico isolado não gera CRITICO
@@ -468,6 +469,83 @@ static void teste_alarme_ate_regularizar() {  // R50, R51
   CHECK(d.liberou && !d.bloqueado && !d.alarme);
 }
 
+// Ataque que ESFRIA (sangue, vacina: frio demais também estraga). O bloqueio é o espelho do
+// aquecimento: o C-Shield libera o aquecedor e NÃO liga a ventoinha de emergência.
+static void teste_ataque_frio() {  // R52, R53, R54
+  std::printf("ataque que esfria: aquecedor liberado e ventoinha desligada (R52 a R54)\n");
+  {
+    Contexto ctx; iniciarContexto(ctx);        // resfriamento rápido: 5 °C -> 3 °C em 10 s
+    Leitura l = base();
+    Decisao d;
+    for (int i = 0; i <= 5; i++) {
+      l.temperatura = 5.0f - 0.4f * (float)i;
+      d = avaliar(l, ctx, T0 + (unsigned long)i * PASSO);
+    }
+    CHECK(d.estado == ST_BLOQUEIO && d.motivo == MT_RESFRIAMENTO_RAPIDO);
+    CHECK(d.bloqueado && d.novoBloqueio && ctx.bloqueios == 1);   // o bloqueio abriu neste último ciclo
+    CHECK(d.taxaCPorMin < -TAXA_MAX_RESFRIAMENTO_C_POR_MIN);
+    CHECK(!d.cortaAquecedor && !d.ligaVentoinha);       // frio: nada de cortar nem de ventilar
+  }
+  {
+    Contexto ctx; iniciarContexto(ctx);        // porta aberta não explica esfriar: também bloqueia
+    Leitura l = base(); l.luzPct = 80.0f;
+    Decisao d;
+    for (int i = 0; i <= 5; i++) {
+      l.temperatura = 5.0f - 0.4f * (float)i;
+      d = avaliar(l, ctx, T0 + (unsigned long)i * PASSO);
+    }
+    CHECK(d.estado == ST_BLOQUEIO && d.motivo == MT_RESFRIAMENTO_RAPIDO);
+  }
+  {
+    Contexto ctx; iniciarContexto(ctx);        // setpoint baixo demais (0 °C): frio, relés em repouso
+    Leitura l = base(); l.setpoint = 0.0f;
+    Decisao d = avaliar(l, ctx, T0);
+    CHECK(d.estado == ST_BLOQUEIO && d.motivo == MT_SETPOINT_INVALIDO && d.bloqueado);
+    CHECK(!d.cortaAquecedor && !d.ligaVentoinha);
+    l.temperatura = 9.5f;                      // se passar do calor, a resposta vira a do calor
+    d = avaliar(l, ctx, T0 + PASSO);
+    CHECK(d.cortaAquecedor && d.ligaVentoinha);
+    l.temperatura = 5.0f;                      // voltou à faixa: segue a direção do bloqueio (frio)
+    d = avaliar(l, ctx, T0 + 2 * PASSO);
+    CHECK(!d.cortaAquecedor && !d.ligaVentoinha && d.bloqueado);
+  }
+  {
+    Contexto ctx; iniciarContexto(ctx);        // bloqueio quente cuja temperatura cai abaixo da faixa
+    const unsigned long t = bloquearPorSetpoint(ctx);
+    Leitura l = base(); l.temperatura = 1.5f;
+    Decisao d = avaliar(l, ctx, t + PASSO);
+    CHECK(d.bloqueado && !d.cortaAquecedor && !d.ligaVentoinha);
+    l.temperatura = 5.0f;                      // e de volta: retoma a direção original (calor)
+    d = avaliar(l, ctx, t + 2 * PASSO);
+    CHECK(d.cortaAquecedor && d.ligaVentoinha);
+  }
+  {
+    Contexto ctx; iniciarContexto(ctx);        // alarme no frio: toca fora da faixa, para ao regularizar
+    Leitura l = base(); l.setpoint = 0.0f;
+    avaliar(l, ctx, T0);
+    l.temperatura = 0.5f;
+    Decisao d = avaliar(l, ctx, T0 + ALARME_INICIAL_MS + PASSO);
+    CHECK(d.alarme && d.bloqueado);
+    l.temperatura = 5.0f;
+    d = avaliar(l, ctx, T0 + ALARME_INICIAL_MS + 2 * PASSO);
+    CHECK(!d.alarme && d.bloqueado);
+  }
+  {
+    Contexto ctx; iniciarContexto(ctx);        // recuperação do calor não é ataque frio
+    Leitura l = base();
+    l.temperatura = 12.0f;
+    avaliar(l, ctx, T0);
+    Decisao d = avaliar(l, ctx, T0 + PASSO);
+    CHECK(d.estado == ST_CRITICO && d.cortaAquecedor && d.ligaVentoinha);
+    unsigned long t = T0 + PASSO;
+    for (float temp = 9.0f; temp >= 5.0f; temp -= 1.0f) {   // cai 30 °C/min até o centro da faixa
+      l.temperatura = temp;
+      d = avaliar(l, ctx, t += PASSO);
+    }
+    CHECK(d.estado == ST_NORMAL && !d.bloqueado);
+  }
+}
+
 int main() {
   teste_perfis();
   teste_validacao_temperatura();
@@ -494,6 +572,7 @@ int main() {
   teste_reles_por_estado();
   teste_nomes();
   teste_alarme_ate_regularizar();
+  teste_ataque_frio();
   std::printf("\n%d verificacoes, %d falhas\n", total, falhas);
   return falhas == 0 ? 0 : 1;
 }

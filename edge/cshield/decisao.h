@@ -39,6 +39,7 @@ enum Motivo {
   MT_DEGELO_FORA_HORARIO,
   MT_DEGELO_LONGO,
   MT_AQUECIMENTO_RAPIDO,
+  MT_RESFRIAMENTO_RAPIDO,
   MT_TEMP_FORA_TOLERANCIA,
   MT_SENSOR_SEM_LEITURA
 };
@@ -64,6 +65,7 @@ struct Contexto {
   bool          bloqueado;         // condição persistente de bloqueio
   unsigned long inicioBloqueioMs;  // base da trava mínima
   Motivo        motivoBloqueio;
+  bool          bloqueioFrio;      // o ataque ESFRIA (setpoint baixo ou resfriamento rápido)
   int           bloqueios;         // contador publicado em `bq`
   float         exposicao;         // °C·min acumulados acima de T_MAX (`ex`)
   bool          degeloAtivo;       // o degelo está comandado desde inicioDegeloMs
@@ -137,6 +139,7 @@ static inline const char* nomeMotivo(Motivo m) {
     case MT_DEGELO_FORA_HORARIO: return "DEGELO_FORA_HORARIO";
     case MT_DEGELO_LONGO:        return "DEGELO_LONGO";
     case MT_AQUECIMENTO_RAPIDO:  return "AQUECIMENTO_RAPIDO";
+    case MT_RESFRIAMENTO_RAPIDO: return "RESFRIAMENTO_RAPIDO";
     case MT_TEMP_FORA_TOLERANCIA:return "TEMP_FORA_TOLERANCIA";
     case MT_SENSOR_SEM_LEITURA:  return "SENSOR_SEM_LEITURA";
   }
@@ -258,9 +261,18 @@ static inline Decisao avaliar(const Leitura& l, Contexto& ctx, unsigned long ago
     // com o sensor em falha a regra não é avaliada).
     } else if (l.valida && !falhaSensor && !porta && taxa > TAXA_MAX_C_POR_MIN) {
       violada = MT_AQUECIMENTO_RAPIDO;
+    // Regra 4, o espelho da 3: resfriamento rápido. Frio demais também estraga (sangue, vacina).
+    // A porta aberta não explica esfriar, então não alivia a regra. Só vale abaixo do centro da
+    // faixa: voltar do calor até o centro (a ventoinha esfriando) não é ataque.
+    } else if (l.valida && !falhaSensor && l.temperatura < (p.tMin + p.tMax) / 2.0f &&
+               taxa < -TAXA_MAX_RESFRIAMENTO_C_POR_MIN) {
+      violada = MT_RESFRIAMENTO_RAPIDO;
     }
     if (violada != MT_NENHUM) {
       ctx.bloqueado = true;
+      // Direção do ataque: um setpoint abaixo da faixa e o resfriamento rápido são ataques de FRIO.
+      ctx.bloqueioFrio = (violada == MT_RESFRIAMENTO_RAPIDO) ||
+                         (violada == MT_SETPOINT_INVALIDO && l.setpoint < p.tMin);
       ctx.inicioBloqueioMs = agoraMs;
       ctx.motivoBloqueio = violada;
       ctx.bloqueios++;
@@ -290,10 +302,17 @@ static inline Decisao avaliar(const Leitura& l, Contexto& ctx, unsigned long ago
     d.motivo = MT_NENHUM;
   }
 
-  // Corta o aquecimento e liga a ventoinha no bloqueio e no crítico. Nunca mexe no
-  // compressor: o C-Shield só veta o que aumenta o risco.
-  d.cortaAquecedor = ctx.bloqueado || critico;
-  d.ligaVentoinha = ctx.bloqueado || critico;
+  // Resposta nos relés, sempre para o lado que protege o produto:
+  //   calor: corta o aquecedor e liga a ventoinha de emergência;
+  //   frio:  deixa o aquecedor liberado e NÃO liga a ventoinha (esfriar mais estragaria o produto).
+  // A temperatura medida manda; com ela dentro da faixa vale a direção do ataque.
+  // Nunca mexe no compressor: o C-Shield só veta o que aumenta o risco.
+  const bool atua = ctx.bloqueado || critico;
+  const bool muitoQuente = l.valida && l.temperatura > p.tMax;
+  const bool muitoFrio = l.valida && l.temperatura < p.tMin;
+  const bool modoCalor = muitoQuente || (!muitoFrio && !ctx.bloqueioFrio);
+  d.cortaAquecedor = atua && modoCalor;
+  d.ligaVentoinha = atua && modoCalor;
 
   // Apito: toca enquanto o bloqueio (ou o crítico) estiver com a temperatura fora da faixa, e
   // para quando ela regulariza. O bloqueio NÃO acaba com o apito: só a liberação presencial.

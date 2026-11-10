@@ -145,6 +145,10 @@ const unsigned long TAXA_MIN_INTERVALO_MS = 10000;
 // inicial. A DPS da equipe vai calibrar com a maquete (modelo de Newton).
 const float TAXA_MAX_C_POR_MIN = 0.5f;
 
+// VALOR PROVISÓRIO, espelho do anterior: resfriamento acima de 0,5 °C/min (abaixo do centro da
+// faixa) é tratado como ataque que esfria. A DPS calibra junto com a taxa de aquecimento.
+const float TAXA_MAX_RESFRIAMENTO_C_POR_MIN = 0.5f;
+
 // Degelo comandado por mais de 30 min é suspeito: um degelo normal é curto.
 const unsigned long DEGELO_MAX_MS = 30UL * 60UL * 1000UL;
 
