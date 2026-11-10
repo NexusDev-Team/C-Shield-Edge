@@ -222,6 +222,11 @@ static inline Decisao avaliar(const Leitura& l, Contexto& ctx, unsigned long ago
   if (ctx.bloqueado && l.liberacao && (agoraMs - ctx.inicioBloqueioMs) >= TRAVA_MS) {
     ctx.bloqueado = false;
     ctx.motivoBloqueio = MT_NENHUM;
+    // O histórico de temperatura da janela de 60 s pertence ao episódio que acabou de ser
+    // bloqueado. Sem descartá-lo, a subida antiga reabriria o bloqueio por "aquecimento
+    // rápido" no mesmo instante da liberação, mesmo com a temperatura já estável.
+    ctx.histN = 0;
+    if (l.valida) registrarAmostra(ctx, l.temperatura, agoraMs);
   }
 
   // --- 3. Julgar a ordem do controlador (ou ignorá-la durante a trava) ---

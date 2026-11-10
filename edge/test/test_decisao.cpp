@@ -285,6 +285,20 @@ static void teste_liberacao_temperatura_ruim() {  // R27, R18
   CHECK(d.cortaAquecedor && d.ligaVentoinha);
 }
 
+static void teste_liberacao_descarta_historico_da_taxa() {  // R26
+  std::printf("liberacao nao reabre o bloqueio por subida antiga (R26)\n");
+  Contexto ctx; iniciarContexto(ctx);
+  Leitura l = base(); l.temperatura = 2.0f; l.setpoint = 40.0f;
+  avaliar(l, ctx, T0);                          // bloqueia por setpoint com 2,0 °C
+  l.temperatura = 5.0f; l.setpoint = 5.0f;      // a temperatura sobe durante a trava
+  for (unsigned long t = T0 + PASSO; t < T0 + TRAVA_MS; t += PASSO) avaliar(l, ctx, t);
+  l.liberacao = true;
+  Decisao d = avaliar(l, ctx, T0 + TRAVA_MS);   // a subida antiga já é história
+  CHECK(d.estado == ST_NORMAL);
+  CHECK(!ctx.bloqueado);
+  CHECK(ctx.bloqueios == 1);
+}
+
 static void teste_liberacao_ordem_ainda_invalida() {  // R28
   std::printf("liberacao com ordem ainda invalida volta a BLOQUEIO (R28)\n");
   Contexto ctx; iniciarContexto(ctx);
@@ -419,6 +433,7 @@ int main() {
   teste_liberacao_antes_da_trava();
   teste_liberacao_temperatura_boa();
   teste_liberacao_temperatura_ruim();
+  teste_liberacao_descarta_historico_da_taxa();
   teste_liberacao_ordem_ainda_invalida();
   teste_critico();
   teste_exposicao();
