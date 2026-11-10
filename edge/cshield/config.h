@@ -181,6 +181,10 @@ const unsigned long DEBOUNCE_MS = 50;
 // leva de 12 °C ao centro da faixa em cerca de 1 min, cabendo no vídeo.
 const float RESFRIAMENTO_DEMO_C_POR_MIN = 6.0f;
 
+// Velocidade com que o aquecedor liberado esquenta a câmara num ataque de frio, na simulação.
+// 3 °C/min leva de 1 °C ao centro da faixa em cerca de 1 min.
+const float AQUECIMENTO_DEMO_C_POR_MIN = 3.0f;
+
 // Variação do sensor acima da qual o modelo entende que a pessoa mexeu no slider. Fica acima
 // do ruído do DHT22 (cerca de 0,1 a 0,2 °C).
 const float MODELO_MUDANCA_C = 0.3f;

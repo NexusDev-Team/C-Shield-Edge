@@ -83,3 +83,13 @@ Prioridade: **CRITICO > BLOQUEIO > FALHA_SENSOR > ATENCAO > NORMAL** (R19).
 - **D4 — CRITICO por frio.** Adotado: temperatura abaixo de `T_MIN - TOLERANCIA_C` também é CRITICO (vacina congelada perde eficácia). A exposição só acumula acima de `T_MAX`.
 - **D5 — Resposta sonora da FALHA_SENSOR.** O plano não define. Adotado: bipe duplo a cada 10 s, distinto da ATENCAO.
 - **D6 — Prazo e commits.** Prazo de 11/11/2026 à noite; commits com escopo (`feat(edge): ...`) a confirmar.
+
+## Alertas e ataque que esfria (revisão de 10/11)
+
+- **R50 — Apito até regularizar.** ENQUANTO houver bloqueio (ou CRITICO) com a temperatura fora de [T_MIN, T_MAX] ou sem leitura válida, e nos primeiros `ALARME_INICIAL_MS` (5 s) de um bloqueio, O C-SHIELD DEVE manter o buzzer tocando. QUANDO a temperatura voltar à faixa, o buzzer DEVE parar.
+- **R51 — Bloqueio sem depender do apito.** O fim do apito NÃO DEVE encerrar o bloqueio: só a liberação presencial (R26).
+- **R52 — Resposta nos relés por direção.** Num ataque de calor, O C-SHIELD DEVE cortar o aquecedor e ligar a ventoinha de emergência. Num ataque de frio, DEVE deixar o aquecedor liberado e NÃO ligar a ventoinha de emergência, pois esfriar mais estragaria o produto (sangue, vacina). Vale também para CRITICO por frio. A temperatura medida manda: acima de T_MAX vale a resposta de calor, abaixo de T_MIN a de frio; dentro da faixa vale a direção do ataque.
+- **R53 — Resfriamento rápido.** QUANDO a taxa de variação passar de -`TAXA_MAX_RESFRIAMENTO_C_POR_MIN` (valor provisório) com a temperatura abaixo do centro da faixa, O C-SHIELD DEVE entrar em BLOQUEIO com motivo `RESFRIAMENTO_RAPIDO`, com a porta aberta ou fechada. Voltar do calor até o centro da faixa não é ataque.
+- **R54 — Setpoint baixo.** QUANDO o setpoint comandado ficar abaixo de T_MIN, o bloqueio DEVE ser de frio (R52).
+- **R55 — LED azul.** ENQUANTO o bloqueio estiver ativo, o LED RGB DEVE ficar azul fixo, inclusive se o estado mostrado for CRITICO.
+- **R56 — Molde do LCD.** O LCD DEVE mostrar `Estado: <nome>` na linha 1 e, na linha 2, alternar a cada 2 s entre `Temp: <t>°C` e as mensagens do estado (motivo, `Restaurando temp`, `Liberar em Ns`, `Segure botao 3s`, exposição).

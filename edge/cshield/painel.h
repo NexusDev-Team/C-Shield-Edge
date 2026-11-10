@@ -89,6 +89,7 @@ static void motivoNoLcd(char* buf, size_t n, Motivo m, float setpoint) {
     case MT_DEGELO_FORA_HORARIO: snprintf(buf, n, "Degelo fora hora"); break;
     case MT_DEGELO_LONGO:        snprintf(buf, n, "Degelo longo"); break;
     case MT_AQUECIMENTO_RAPIDO:  snprintf(buf, n, "Aquec. rapido"); break;
+    case MT_RESFRIAMENTO_RAPIDO: snprintf(buf, n, "Resfria rapido"); break;
     default:                     snprintf(buf, n, "Bloqueio ativo"); break;
   }
 }
@@ -111,7 +112,8 @@ static void mostrarEstado(const Decisao& d, const Leitura& l, unsigned long agor
       break;
     case ST_BLOQUEIO: {
       motivoNoLcd(msg[n++], sizeof(msg[0]), d.motivo, l.setpoint);
-      if (l.valida && l.temperatura > p.tMax) snprintf(msg[n++], sizeof(msg[0]), "Restaurando temp");
+      if (l.valida && (l.temperatura > p.tMax || l.temperatura < p.tMin))
+        snprintf(msg[n++], sizeof(msg[0]), "Restaurando temp");
       unsigned long s = d.travaRestanteMs / 1000UL;
       if (s >= 100)    snprintf(msg[n++], sizeof(msg[0]), "Liberar em %lum", s / 60UL);
       else if (s > 0)  snprintf(msg[n++], sizeof(msg[0]), "Liberar em %lus", s);

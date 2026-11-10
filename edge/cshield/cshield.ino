@@ -54,8 +54,9 @@ static void imprimirSerial() {
                 decisao.travaRestanteMs / 1000UL, decisao.alarme ? "ON" : "OFF",
                 redeOk() ? "OK" : "OFF");
   if (decisao.novoBloqueio)
-    Serial.printf("[%s] *** BLOQUEIO (%s): aquecedor cortado, ventoinha ligada ***\n",
-                  ID_DEVICE, nomeMotivo(decisao.motivo));
+    Serial.printf("[%s] *** BLOQUEIO (%s): %s ***\n", ID_DEVICE, nomeMotivo(decisao.motivo),
+                  decisao.cortaAquecedor ? "aquecedor cortado, ventoinha ligada"
+                                         : "ataque de FRIO: aquecedor liberado, ventoinha desligada");
   if (decisao.liberou)
     Serial.printf("[%s] liberacao presencial ACEITA: bloqueio encerrado\n", ID_DEVICE);
   if (decisao.liberacaoRecusada)
@@ -74,7 +75,8 @@ static void cicloDeDecisao(unsigned long agora) {
 
   // Só na demonstração: a ventoinha de emergência (da decisão anterior) esfria a temperatura.
   if (leitura.valida)
-    leitura.temperatura = modeloTermicoDemo(leitura.temperatura, decisao.ligaVentoinha, agora);
+    leitura.temperatura = modeloTermicoDemo(leitura.temperatura, decisao.ligaVentoinha,
+                                            decisao.bloqueado && !decisao.cortaAquecedor, agora);
 
   decisao = avaliar(leitura, contexto, agora);
   aplicarReles(decisao.cortaAquecedor, decisao.ligaVentoinha);
