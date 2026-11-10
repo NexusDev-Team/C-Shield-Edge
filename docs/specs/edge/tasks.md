@@ -78,3 +78,11 @@ Regras de execução: execução direta e auto-revisada (decisão V3 do plano); 
 | 20. CRITICO sem bloqueio que volta à faixa: relés voltam ao repouso | R30 |
 | 21. Ventoinha efetiva: nunca menor que a comandada pelo controlador | R5 |
 | 22. NORMAL e ATENCAO por porta ou deriva com relés em repouso | R12, R13 |
+
+## Registro da revisão final (plano §4)
+
+- A lógica de decisão foi dividida em `decisao_tipos.h`, `decisao_regras.h` e `decisao.h`, para nenhum arquivo passar de ~250 linhas.
+- `liberar()` recebe também `agoraMs`, porque ao liberar registra a amostra de temperatura atual no histórico da taxa.
+- Ao liberar, a contagem do tempo do aquecedor recomeça do zero: se o controlador ainda estiver mandando o degelo, o bloqueio só reabre depois de nova duração máxima.
+- Foram adicionados stubs em `edge/test/stubs/` para checar a sintaxe do firmware inteiro (`g++ -fsyntax-only`) sem o `arduino-cli`.
+- Testes: 89 verificações com `MODO_DEMO=1` e 92 com `MODO_DEMO=0`, todas passando.
