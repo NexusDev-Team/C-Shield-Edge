@@ -17,8 +17,7 @@
 
     { "type": "wokwi-lcd1602", "id": "lcd1", "top": -330, "left": 340, "attrs": { "pins": "i2c" } },
 
-    { "type": "wokwi-slide-switch", "id": "sw_aq", "top": 10, "left": 230, "attrs": { "label": "Controlador: aquecedor" } },
-    { "type": "wokwi-slide-switch", "id": "sw_vt", "top": 80, "left": 230, "attrs": { "label": "Controlador: ventoinha" } },
+    { "type": "wokwi-slide-switch", "id": "sw_ctl", "top": 40, "left": 230, "attrs": { "label": "Controlador: NORMAL (esq) / DEGELO (dir)" } },
     { "type": "wokwi-pushbutton", "id": "btn1", "top": 160, "left": 230, "attrs": { "color": "green", "label": "Liberar (3 s)" } },
 
     { "type": "wokwi-relay-module", "id": "rele1", "top": 10, "left": 330, "attrs": { "label": "Rele 1 - corta aquecedor (NF)" } },
@@ -46,13 +45,9 @@
     [ "ldr1:VCC", "bb1:tp.10", "red", [ "v0" ] ],
     [ "ldr1:GND", "bb1:tn.10", "black", [ "v0" ] ],
 
-    [ "sw_aq:2", "esp:D18", "green", [ "v0" ] ],
-    [ "sw_aq:1", "bb1:tn.12", "black", [ "v0" ] ],
-    [ "sw_aq:3", "bb1:tp.12", "red", [ "v0" ] ],
-
-    [ "sw_vt:2", "esp:D17", "green", [ "v0" ] ],
-    [ "sw_vt:1", "bb1:tn.13", "black", [ "v0" ] ],
-    [ "sw_vt:3", "bb1:tp.13", "red", [ "v0" ] ],
+    [ "sw_ctl:2", "bb1:tp.12", "red", [ "v0" ] ],
+    [ "sw_ctl:1", "esp:D17", "green", [ "v0" ] ],
+    [ "sw_ctl:3", "esp:D18", "green", [ "v0" ] ],
 
     [ "btn1:1.l", "esp:D19", "green", [ "v0" ] ],
     [ "btn1:2.l", "bb1:tn.16", "black", [ "v0" ] ],
@@ -71,7 +66,7 @@
     [ "esp:D23", "rele1:IN", "green", [ "v0" ] ],
     [ "esp:VIN", "rele1:VCC", "red", [ "v0" ] ],
     [ "rele1:GND", "bb1:tn.18", "black", [ "v0" ] ],
-    [ "rele1:COM", "sw_aq:2", "green", [ "v0" ] ],
+    [ "rele1:COM", "sw_ctl:3", "green", [ "v0" ] ],
     [ "rele1:NC", "r_aq:1", "green", [ "v0" ] ],
     [ "r_aq:2", "led_aq:A", "green", [ "v0" ] ],
     [ "led_aq:C", "bb1:tn.22", "black", [ "v0" ] ],
@@ -79,7 +74,7 @@
     [ "esp:D33", "rele2:IN", "green", [ "v0" ] ],
     [ "esp:VIN", "rele2:VCC", "red", [ "v0" ] ],
     [ "rele2:GND", "bb1:tn.19", "black", [ "v0" ] ],
-    [ "rele2:NC", "sw_vt:2", "green", [ "v0" ] ],
+    [ "rele2:NC", "sw_ctl:1", "green", [ "v0" ] ],
     [ "rele2:NO", "bb1:tp.19", "red", [ "v0" ] ],
     [ "rele2:COM", "r_vt:1", "green", [ "v0" ] ],
     [ "r_vt:2", "led_vt:A", "green", [ "v0" ] ],

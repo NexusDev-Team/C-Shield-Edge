@@ -148,5 +148,5 @@ flowchart TD
 
 ## 7. Ligação dos relés no Wokwi
 
-- **Relé 1** (GPIO 23): `COM` no sinal da chave do aquecedor; `NC` → 220 Ω → LED laranja → GND. Em repouso o sinal passa; acionado, abre e o LED apaga.
-- **Relé 2** (GPIO 33): `NC` no sinal da chave da ventoinha; `NO` no 3V3; `COM` → 220 Ω → LED azul → GND. Em repouso o LED segue o controlador; acionado, recebe 3V3 e acende.
+- **Relé 1** (GPIO 23): `COM` no pino 3 da chave do controlador (sinal de aquecedor, alto em DEGELO); `NC` → 220 Ω → LED laranja → GND. Em repouso o sinal passa; acionado, abre e o LED apaga.
+- **Relé 2** (GPIO 33): `NC` no pino 1 da chave do controlador (sinal de ventoinha, alto em NORMAL); `NO` no 3V3; `COM` → 220 Ω → LED azul → GND. Em repouso o LED segue o controlador; acionado, recebe 3V3 e acende.

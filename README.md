@@ -34,8 +34,8 @@ O firmware **só envia dados**. Não há `subscribe`, `setCallback`, atualizaç�
 ## Abrir no Wokwi
 
 1. Crie um projeto ESP32 no Wokwi e copie para ele todos os arquivos de `edge/cshield/`: `cshield.ino`, `config.h`, `decisao.h`, `sensores.h`, `atuadores.h`, `painel.h`, `rede.h`, `simulacao.h`, `diagram.json` e `libraries.txt`.
-2. Inicie a simulação. No ponto de partida, a chave "Controlador: ventoinha" fica à direita (ligada) e a "Controlador: aquecedor" à esquerda (desligada).
-3. Para simular um ataque, ligue o aquecedor e desligue a ventoinha por mais de 15 s (modo demonstração). Para liberar, segure o botão verde por 3 s. A tabela completa de testes está em `docs/edge-testes-estados.md` e o roteiro do vídeo em `docs/edge-roteiro-video.md`.
+2. Inicie a simulação. No ponto de partida, a chave "Controlador: NORMAL / DEGELO" fica à esquerda (NORMAL: ventoinha ligada, aquecedor desligado).
+3. Para simular um ataque, deixe a chave em DEGELO (aquecedor ligado, ventoinha desligada) por mais de 15 s (modo demonstração). Virar a chave e voltar antes de 15 s é um degelo legítimo. Para liberar, segure o botão verde por 3 s. A tabela completa de testes está em `docs/edge-testes-estados.md` e o roteiro do vídeo em `docs/edge-roteiro-video.md`.
 
 O Wokwi só publica no FIWARE com a aba aberta e a simulação ativa. O broker MQTT está em `BROKER_MQTT` no `config.h` (placeholder: confirmar o IP elástico da EC2).
 

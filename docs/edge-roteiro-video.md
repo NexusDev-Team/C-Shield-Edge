@@ -9,7 +9,7 @@ Projeto C-Shield · Nexus Vision · GS 2026.2 "CitizenTech". Vídeo no YouTube d
 - [ ] Abrir o site da GS na rota `/ao-vivo` e confirmar que ele responde.
 - [ ] Abrir o Wokwi, iniciar a simulação e conferir no Serial `rede=OK`.
 - [ ] **Lembrete: o Wokwi só publica enquanto a aba do navegador estiver aberta e a simulação ativa.** Não minimize nem feche a aba durante a gravação.
-- [ ] Deixar o ponto de partida: DHT22 em 5 °C, LDR escuro, chave do **aquecedor à esquerda** (desligada), chave da **ventoinha à direita** (ligada), estado NORMAL.
+- [ ] Deixar o ponto de partida: DHT22 em 5 °C, LDR escuro, chave do controlador em **NORMAL** (esquerda), estado NORMAL.
 - [ ] Ter o `MODO_DEMO 1` no `config.h`: o degelo máximo é de 15 s, e a checagem de horário fica desligada, então a hora local não atrapalha.
 - [ ] Ter abertas, em abas separadas: o Wokwi, o `decisao.h` (função `avaliar`), o `rede.h`, o terminal com o `curl` do Orion e o site `/ao-vivo`.
 
@@ -28,15 +28,14 @@ Projeto C-Shield · Nexus Vision · GS 2026.2 "CitizenTech". Vídeo no YouTube d
 
 ## 2. Cada componente e por que está ali (1:05 a 2:10 · 65 s)
 
-**Na tela:** o `diagram.json` aberto no Wokwi, apontando para cada peça. Dividir a explicação em dois lados: o **lado do controlador** (as duas chaves) e o **lado da geladeira** (relés e LEDs).
+**Na tela:** o `diagram.json` aberto no Wokwi, apontando para cada peça. Dividir a explicação em dois lados: o **lado do controlador** (a chave) e o **lado da geladeira** (relés e LEDs).
 
 | Componente | O que dizer |
 | --- | --- |
 | ESP32 | "O cérebro. Roda a política de decisão e funciona offline." |
 | DHT22 (GPIO 4) | "Mede temperatura e umidade próprias, independentes do controlador, que é justamente o que pode mentir." |
 | LDR (GPIO 34) | "Detecta porta aberta pela luz. Porta aberta justifica o calor e muda a resposta." |
-| Chave "Controlador: aquecedor" (GPIO 18) | "No simulador, representa o controlador comercial mandando ligar o aquecedor de degelo." |
-| Chave "Controlador: ventoinha" (GPIO 17) | "Representa o controlador mandando ligar a ventoinha. Um degelo normal liga o aquecedor e desliga a ventoinha. É por isso que o C-Shield olha o tempo e o horário." |
+| Chave "Controlador: NORMAL / DEGELO" (GPIO 17 e 18) | "No simulador, representa o controlador comercial. Em NORMAL, a ventoinha trabalha. Em DEGELO, liga o aquecedor e desliga a ventoinha. Um degelo normal é assim, e um ataque também. É por isso que o C-Shield olha o tempo e o horário." |
 | Botão (GPIO 19) | "A única forma de liberar um bloqueio, e só presencial: segurar por 3 segundos." |
 | Relé 1, contato NF (GPIO 23) | "Fica entre o controlador e o aquecedor. Acionado, abre o circuito e corta o aquecimento. Em repouso fica fechado: se o C-Shield falhar, o equipamento funciona como antes." |
 | Relé 2, comutador (GPIO 33) | "Em repouso, a ventoinha segue o controlador. Acionado, o C-Shield liga a ventoinha direto. Ele nunca desliga a refrigeração, só acrescenta." |
@@ -72,7 +71,7 @@ Projeto C-Shield · Nexus Vision · GS 2026.2 "CitizenTech". Vídeo no YouTube d
 
 ## 5. A simulação passando por todos os estados (3:40 a 6:15 · 155 s)
 
-**Na tela:** o Wokwi com o Serial Monitor visível, o LCD, o LED RGB e os dois LEDs indicadores em quadro. As duas chaves fazem o papel do controlador (direita = ligado).
+**Na tela:** o Wokwi com o Serial Monitor visível, o LCD, o LED RGB e os dois LEDs indicadores em quadro. A chave única faz o papel do controlador (esquerda = NORMAL, direita = DEGELO).
 
 **Uma frase sobre o simulador, dita na primeira vez que a temperatura cair sozinha:** "O sensor do simulador é um slider manual, então um modelo térmico da demonstração faz a ventoinha esfriar a temperatura que o C-Shield enxerga. Na maquete física, ele é desligado."
 
@@ -81,12 +80,12 @@ Projeto C-Shield · Nexus Vision · GS 2026.2 "CitizenTech". Vídeo no YouTube d
 | 3:40 a 3:50 | Ponto de partida | NORMAL: LED verde, LCD `C-Shield NORMAL`, azul aceso (ventoinha do controlador), laranja apagado. |
 | 3:50 a 4:00 | Subir o LDR | ATENCAO por porta aberta: LED amarelo, LCD `PORTA ABERTA`, bipe curto. Fechar a porta. |
 | 4:00 a 4:15 | Desconectar o fio de dados do DHT22, esperar, reconectar | FALHA_SENSOR: LED amarelo piscando, LCD `SENSOR SEM LEIT.`, Serial `t=-999.0`. |
-| 4:15 a 4:30 | **Degelo legítimo:** chave do aquecedor à direita e da ventoinha à esquerda; soltar antes de 15 s | ATENCAO com contagem: LCD `DEGELO 0:12`, laranja aceso. "Um degelo normal não é ataque." Voltar as chaves ao ponto de partida. |
+| 4:15 a 4:30 | **Degelo legítimo:** chave do controlador para DEGELO; voltar a NORMAL antes de 15 s | ATENCAO com contagem: LCD `DEGELO 0:12`, laranja aceso. "Um degelo normal não é ataque." Voltar as chaves ao ponto de partida. |
 | 4:30 a 4:55 | **Degelo forçado:** repetir e **deixar passar de 15 s** | O ataque. BLOQUEIO: LCD `ATAQUE BLOQUEADO`, LED vermelho piscando, buzzer intermitente, **laranja apaga** (aquecedor cortado). Serial: `>>> BLOQUEIO: DEGELO_FORCADO (aquecedor ligado e ventoinha desligada ha 16s)`. |
-| 4:55 a 5:10 | Mexer nas duas chaves durante o bloqueio | Serial: `ordem do controlador IGNORADA (bloqueio ativo), ci=...`; o laranja continua apagado. "O controlador não manda mais." |
+| 4:55 a 5:10 | Virar a chave do controlador durante o bloqueio | Serial: `ordem do controlador IGNORADA (bloqueio ativo), ci=...`; o laranja continua apagado. "O controlador não manda mais." |
 | 5:10 a 5:30 | Deixar o DHT22 em 7 °C e esperar | Termostato de emergência: o azul apaga quando a temperatura chega a 4 °C e acende de novo em 6 °C, sozinho. Dizer a frase sobre o simulador. |
 | 5:30 a 5:45 | Subir o DHT22 para 12 °C | CRITICO: LED vermelho fixo, buzzer contínuo, LCD `PRODUTO EM RISCO` com a exposição térmica. Com o bloqueio ativo, a ventoinha esfria a temperatura de volta. |
-| 5:45 a 6:15 | Chaves de volta ao normal (aquecedor à esquerda, ventoinha à direita), DHT22 em 5 °C, **segurar o botão por 3 s** | LCD `LIBERANDO...` com a barra enchendo, depois `BLOQUEIO LIBERADO!` por 3 s; volta a NORMAL e o controlador volta a mandar. "Só presencial. Sem tempo de expiração, sem comando remoto." |
+| 5:45 a 6:15 | Chave do controlador em NORMAL, DHT22 em 5 °C, **segurar o botão por 3 s** | LCD `LIBERANDO...` com a barra enchendo, depois `BLOQUEIO LIBERADO!` por 3 s; volta a NORMAL e o controlador volta a mandar. "Só presencial. Sem tempo de expiração, sem comando remoto." |
 
 Dica de gravação: a **liberação recusada** (botão com a temperatura fora da faixa, LCD `FORA DA FAIXA` / `AGUARDE`) não cabe no tempo; se sobrar folga, mostre-a antes de voltar o DHT22 a 5 °C (use 12 °C e aperte logo depois de subir o slider).
 
