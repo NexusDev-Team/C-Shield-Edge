@@ -39,6 +39,7 @@ static Contexto contexto;     // memória da decisão entre ciclos
 static Decisao  decisao;      // última decisão
 static char     payload[160]; // última linha UltraLight pronta para publicar
 static bool     eventoPendente = false;  // bloqueio novo ainda não publicado
+static unsigned long liberadoAteMs = 0;  // até quando o LCD mostra "BLOQUEIO LIBERADO"
 
 // Imprime uma linha por ciclo de decisão, com os mesmos nomes do payload.
 static void imprimirSerial() {
@@ -75,6 +76,8 @@ static void cicloDeDecisao(unsigned long agora) {
 
   montarPayload(payload, sizeof(payload), leitura, decisao, contexto.bloqueios);
   if (decisao.novoBloqueio) eventoPendente = true;
+  // A decisão só marca `liberou` num ciclo; guarda o prazo para a tela confirmar por mais tempo.
+  if (decisao.liberou) liberadoAteMs = agora + LIBERADO_TELA_MS;
 }
 
 void setup() {
@@ -112,6 +115,8 @@ void loop() {
   // LCD: boot por um instante, barra de liberação enquanto segura o botão, senão o estado.
   if (agora < BOOT_TELA_MS) {
     // mantém a tela de boot
+  } else if (agora < liberadoAteMs) {
+    mostrarLiberado();        // confirma a liberação por LIBERADO_TELA_MS
   } else if (botaoProgressoPct() > 0) {
     if (decisao.travaRestanteMs > 0) mostrarTravaAtiva(decisao.travaRestanteMs);
     else                             mostrarLiberacao(botaoProgressoPct());

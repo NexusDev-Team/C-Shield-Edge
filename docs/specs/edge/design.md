@@ -146,6 +146,7 @@ void iniciarPainel();
 void mostrarBoot();
 void mostrarEstado(const Decisao& d, const Leitura& l, const Perfil& p, unsigned long agoraMs);
 void mostrarLiberacao(int progressoPct);      // "LIBERANDO..." + barra de 16 blocos
+void mostrarLiberado();                       // "BLOQUEIO" / "LIBERADO!" por LIBERADO_TELA_MS
 ```
 
 `rede.h` (só publicação):

@@ -82,7 +82,7 @@ Projeto C-Shield · Nexus Vision · GS 2026.2 "CitizenTech". Vídeo no YouTube d
 | 5:15 a 5:30 | Mexer na chave "Controlador" de novo durante a trava | Serial: `ordem do controlador IGNORADA (trava ativa)`. |
 | 5:30 a 5:45 | Subir o DHT22 além de 9 °C | CRITICO: LED vermelho fixo, buzzer contínuo, LCD `PRODUTO EM RISCO` com a exposição térmica. Voltar o DHT22 a 5 °C. |
 | 5:45 a 6:00 | Desconectar o DHT22 | FALHA_SENSOR: LED amarelo piscando, LCD `FALHA NO SENSOR`, bipe duplo. Reconectar. |
-| 6:00 a 6:15 | Trazer o setpoint de volta, esperar `trava=0s`, **segurar o botão por 3 s** | LCD `LIBERANDO...` com a barra enchendo; volta a NORMAL. "Só presencial." |
+| 6:00 a 6:15 | Trazer o setpoint de volta, esperar `trava=0s`, **segurar o botão por 3 s** | LCD `LIBERANDO...` com a barra enchendo, depois `BLOQUEIO LIBERADO!` por 3 s; volta a NORMAL. "Só presencial." |
 
 Dica de gravação: se a trava de 60 s atrapalhar o ritmo, faça a parte do CRITICO e da falha de sensor enquanto ela corre e libere no final.
 

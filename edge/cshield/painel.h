@@ -24,6 +24,7 @@
  *   CRITICO       "PRODUTO EM RISCO" / temperatura e exposição
  *   FALHA_SENSOR  "FALHA NO SENSOR" / "DHT22 sem dado"
  *   Liberando     "LIBERANDO..." / barra de progresso de 16 blocos
+ *   Liberado      "BLOQUEIO" / "LIBERADO!" (por LIBERADO_TELA_MS após a liberação)
  */
 #ifndef PAINEL_H
 #define PAINEL_H
@@ -130,6 +131,12 @@ static void mostrarTravaAtiva(unsigned long travaRestanteMs) {
   else          snprintf(l2, sizeof(l2), "AGUARDE %lus", s);
   escreverLinha(0, "TRAVA ATIVA");
   escreverLinha(1, l2);
+}
+
+// Confirmação mostrada logo depois de a liberação presencial ser aceita.
+static void mostrarLiberado() {
+  escreverLinha(0, "BLOQUEIO");
+  escreverLinha(1, "LIBERADO!");
 }
 
 // Tela de liberação: título e barra de 16 blocos que enche em LIBERACAO_MS.
