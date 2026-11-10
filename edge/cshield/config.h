@@ -209,6 +209,10 @@ static const char* const TOPICO_ATTRS = "/TEF/cshield001/attrs";  // único tóp
 // Reconexão de Wi-Fi/MQTT a cada 10 s, sem travar o loop().
 const unsigned long INTERVALO_RECONEXAO_MS = 10000;
 
+// Tempo máximo da sonda TCP antes de tentar o MQTT. Curto o bastante para o loop() não
+// travar com o broker fora do ar; longo o bastante para o ida e volta até a EC2.
+const int TIMEOUT_SONDA_MS = 800;
+
 // Telemetria a cada 5 s (e imediata a cada mudança de estado).
 const unsigned long PERIODO_PUBLICACAO_MS = 5000;
 

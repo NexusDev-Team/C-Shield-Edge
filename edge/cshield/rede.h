@@ -18,8 +18,8 @@
  *
  * Sem rede o resto do firmware continua igual: a decisão e as respostas locais não
  * dependem daqui. A reconexão é tentada a cada INTERVALO_RECONEXAO_MS.
- * Limite conhecido: uma tentativa de conectar ao broker pode segurar o loop() por até
- * ~2 s (timeout do socket), no máximo uma vez a cada 10 s e só quando o broker não responde.
+ * Antes de cada tentativa de MQTT há uma sonda TCP de no máximo TIMEOUT_SONDA_MS, para o
+ * loop() não ficar parado por segundos quando o broker está fora do ar.
  */
 #ifndef REDE_H
 #define REDE_H
@@ -49,6 +49,14 @@ static void iniciarRede() {
 // true quando Wi-Fi e MQTT estão conectados.
 static bool redeOk() { return WiFi.status() == WL_CONNECTED && mqtt.connected(); }
 
+// Abre e fecha uma conexão TCP curta só para saber se o broker responde.
+static bool brokerAlcancavel() {
+  WiFiClient sonda;
+  bool ok = sonda.connect(BROKER_MQTT, BROKER_PORTA, TIMEOUT_SONDA_MS);
+  sonda.stop();
+  return ok;
+}
+
 // Tenta reconectar a cada INTERVALO_RECONEXAO_MS, sem insistir no resto do tempo.
 // Chamar a cada volta do loop().
 static void atualizarRede(unsigned long agoraMs) {
@@ -67,6 +75,12 @@ static void atualizarRede(unsigned long agoraMs) {
   if (!primeiraTentativa && !vencido) return;
   primeiraTentativa = false;
   ultimaTentativaMs = agoraMs;
+  // Sonda rápida: com o broker fora do ar, o mqtt.connect() seguraria o loop() por segundos
+  // (e o botão de liberação ficaria sem resposta). A sonda limita o bloqueio a TIMEOUT_SONDA_MS.
+  if (!brokerAlcancavel()) {
+    Serial.println("Broker MQTT inacessivel; tentando de novo em 10 s");
+    return;
+  }
   Serial.print("Conectando ao broker MQTT... ");
   Serial.println(mqtt.connect(ID_DEVICE) ? "ok" : "falhou");
 }
