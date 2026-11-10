@@ -21,12 +21,14 @@
     { "type": "wokwi-pushbutton", "id": "btn1", "top": 170, "left": 230, "attrs": { "color": "green", "label": "Liberar (3 s)" } },
 
     { "type": "wokwi-relay-module", "id": "rele1", "top": 10, "left": 330, "attrs": { "label": "Rele 1 - corta aquecedor (NF)" } },
-    { "type": "wokwi-relay-module", "id": "rele2", "top": 10, "left": 450, "attrs": { "label": "Rele 2 - ventoinha (NA)" } },
+    { "type": "wokwi-relay-module", "id": "rele2", "top": 10, "left": 450, "attrs": { "label": "Rele 2 - ventoinha de emergencia (NA)" } },
 
     { "type": "wokwi-resistor", "id": "r_aq", "top": 130, "left": 345, "rotate": 90, "attrs": { "value": "220" } },
     { "type": "wokwi-led", "id": "led_aq", "top": 170, "left": 345, "attrs": { "color": "orange", "label": "Aquecedor liberado" } },
     { "type": "wokwi-resistor", "id": "r_vt", "top": 130, "left": 465, "rotate": 90, "attrs": { "value": "220" } },
-    { "type": "wokwi-led", "id": "led_vt", "top": 170, "left": 465, "attrs": { "color": "blue", "label": "Ventoinha" } }
+    { "type": "wokwi-led", "id": "led_vt", "top": 170, "left": 465, "attrs": { "color": "blue", "label": "Ventoinha de emergencia" } },
+    { "type": "wokwi-resistor", "id": "r_vr", "top": 130, "left": 585, "rotate": 90, "attrs": { "value": "220" } },
+    { "type": "wokwi-led", "id": "led_vr", "top": 170, "left": 585, "attrs": { "color": "green", "label": "Ventoinha de refrigeracao" } }
   ],
   "connections": [
     [ "esp:TX0", "$serialMonitor:RX", "", [] ],
@@ -48,6 +50,10 @@
     [ "sw2:2", "esp:D32", "green", [ "v0" ] ],
     [ "sw2:1", "bb1:tn.12", "black", [ "v0" ] ],
     [ "sw2:3", "bb1:tp.12", "red", [ "v0" ] ],
+
+    [ "r_vr:1", "bb1:tp.24", "red", [ "v0" ] ],
+    [ "r_vr:2", "led_vr:A", "green", [ "v0" ] ],
+    [ "led_vr:C", "sw2:2", "green", [ "v0" ] ],
 
     [ "btn1:1.l", "esp:D19", "green", [ "v0" ] ],
     [ "btn1:2.l", "bb1:tn.16", "black", [ "v0" ] ],

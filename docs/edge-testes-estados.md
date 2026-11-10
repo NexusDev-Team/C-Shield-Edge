@@ -11,11 +11,11 @@ A lógica de decisão também tem testes automáticos no computador (`edge/test/
 3. Abra o Serial Monitor. A cada 2 s aparece uma linha como
    `[cshield001] t=4.8C h=81% l=12% sp=5.0C dg=0 taxa=+0.02C/min st=NORMAL mt=- trava=0s rede=OK`.
 4. **Ponto de partida (NORMAL):** DHT22 em 5 °C, LDR escuro, botão solto. A chave "Controlador" fica na posição NORMAL (esquerda), e o Serial mostra `sp=5.0C`.
-5. Em NORMAL o LED fica verde, o buzzer em silêncio, os dois LEDs indicadores mostram aquecedor (laranja) aceso e ventoinha (azul) apagada.
+5. Em NORMAL o LED fica verde, o buzzer em silêncio, os LEDs indicadores mostram aquecedor liberado (laranja) aceso, ventoinha de refrigeração (verde) acesa e ventoinha de emergência (azul) apagada.
 
 ## Tabela de estados
 
-Legenda de relés: "Aquecedor" é o LED laranja no contato NF do relé 1 (aceso = aquecedor ligado, apagado = cortado). "Ventoinha" é o LED azul no contato NA do relé 2.
+Legenda de relés: "Aquecedor" é o LED laranja no contato NF do relé 1 (aceso = aquecedor ligado, apagado = cortado). "Ventoinha" é a ventoinha de emergência, o LED azul no contato NA do relé 2. A ventoinha de refrigeração (LED verde) representa a do controlador: ligada direto na chave "Controlador", acende em NORMAL e apaga em ATAQUE, sem passar pelo firmware.
 
 | Estado | O que mexer no Wokwi | LED RGB | Buzzer | LCD (16x2) | Aquecedor / Ventoinha | Serial | Resultado |
 | --- | --- | --- | --- | --- | --- | --- | --- |

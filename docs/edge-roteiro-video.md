@@ -40,7 +40,8 @@ Projeto C-Shield · Nexus Vision · GS 2026.2 "CitizenTech". Vídeo no YouTube d
 | Botão (GPIO 19) | "A única forma de liberar um bloqueio, e só presencial: segurar por 3 segundos." |
 | Relé 1, contato NF (GPIO 23) | "Fica entre o controlador e o aquecedor. Energizado, abre o circuito e corta o aquecimento. Desenergizado, fica fechado: se o C-Shield falhar, o equipamento funciona como antes." |
 | Relé 2, contato NA (GPIO 33) | "Liga a ventoinha de emergência no bloqueio." |
-| LEDs laranja e azul | "No simulador mostram o aquecedor cortado e a ventoinha ligada." |
+| LEDs laranja e azul | "No simulador mostram o aquecedor cortado e a ventoinha de emergência ligada." |
+| LED verde (ventoinha de refrigeração) | "É a ventoinha normal do controlador. No ataque ela apaga, como se o atacante desligasse o frio, e a de emergência assume." |
 | LED RGB (GPIO 25, 26, 27) | "A cor do estado: verde, amarelo, vermelho." |
 | Buzzer (GPIO 5) | "Um padrão sonoro diferente por estado." |
 | LCD 16x2 I2C (GPIO 21 e 22) | "Mostra o estado e o motivo para quem está na sala." |
@@ -71,13 +72,13 @@ Projeto C-Shield · Nexus Vision · GS 2026.2 "CitizenTech". Vídeo no YouTube d
 
 ## 5. A simulação passando por todos os estados (4:15 a 6:15 · 120 s)
 
-**Na tela:** o Wokwi com o Serial Monitor visível, o LCD, o LED RGB e os dois LEDs indicadores em quadro. O "ataque" é **mover a chave "Controlador" para ATAQUE**; os LEDs laranja e azul mostram o aquecedor cortado e a ventoinha ligada.
+**Na tela:** o Wokwi com o Serial Monitor visível, o LCD, o LED RGB e os dois LEDs indicadores em quadro. O "ataque" é **mover a chave "Controlador" para ATAQUE**; o LED verde (refrigeração) apaga e os LEDs laranja e azul mostram o aquecedor cortado e a ventoinha de emergência ligada.
 
 | Tempo | Ação | O que mostrar e dizer |
 | --- | --- | --- |
-| 4:15 a 4:30 | Ponto de partida | NORMAL: LED verde, LCD `C-Shield NORMAL`, LED laranja (aquecedor) aceso, azul apagado. |
+| 4:15 a 4:30 | Ponto de partida | NORMAL: LED verde, LCD `C-Shield NORMAL`, LED laranja (aquecedor) aceso, verde (refrigeração) aceso, azul (emergência) apagado. |
 | 4:30 a 4:45 | Subir o LDR | ATENCAO por porta aberta: LED amarelo, LCD `PORTA ABERTA`, bipe curto. Fechar a porta. |
-| 4:45 a 5:15 | **Mover a chave "Controlador" para ATAQUE** | O ataque. BLOQUEIO imediato: LCD `ATAQUE BLOQUEADO`, LED vermelho piscando, buzzer intermitente, **LED laranja apaga** (aquecedor cortado), **LED azul acende** (ventoinha). Serial mostra `BLOQUEIO (SETPOINT_INVALIDO)` e o valor recebido. "Sem esperar a temperatura subir." |
+| 4:45 a 5:15 | **Mover a chave "Controlador" para ATAQUE** | O ataque. BLOQUEIO imediato: LCD `ATAQUE BLOQUEADO`, LED vermelho piscando, buzzer intermitente, **LED verde apaga** (o atacante desliga a refrigeração), **LED laranja apaga** (aquecedor cortado), **LED azul acende** (ventoinha de emergência). Serial mostra `BLOQUEIO (SETPOINT_INVALIDO)` e o valor recebido. "Sem esperar a temperatura subir." |
 | 5:15 a 5:30 | Mexer na chave "Controlador" de novo durante a trava | Serial: `ordem do controlador IGNORADA (trava ativa)`. |
 | 5:30 a 5:45 | Subir o DHT22 além de 9 °C | CRITICO: LED vermelho fixo, buzzer contínuo, LCD `PRODUTO EM RISCO` com a exposição térmica. Voltar o DHT22 a 5 °C. |
 | 5:45 a 6:00 | Desconectar o DHT22 | FALHA_SENSOR: LED amarelo piscando, LCD `FALHA NO SENSOR`, bipe duplo. Reconectar. |
@@ -109,7 +110,7 @@ Dica de gravação: se a trava de 60 s atrapalhar o ritmo, faça a parte do CRIT
 
 - [ ] Duração do vídeo: no máximo 7:00.
 - [ ] Todos os 5 estados apareceram, inclusive a falha de sensor.
-- [ ] O corte do aquecimento (LED laranja apagando) e a ventoinha (LED azul acendendo) ficaram visíveis.
+- [ ] O corte do aquecimento (LED laranja apagando) e a troca de ventoinhas (verde apagando, azul acendendo) ficaram visíveis.
 - [ ] O `grep` sem `subscribe` apareceu com saída vazia.
 - [ ] O site `/ao-vivo` mostrou o bloqueio.
 - [ ] O vídeo está público ou não listado, com o link do Wokwi na descrição.
