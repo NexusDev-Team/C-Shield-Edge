@@ -1,5 +1,5 @@
 /*
- * C-Shield — Edge Computing do Guardião (GS 2026.2 "CitizenTech")
+ * C-Shield — Edge Computing (GS 2026.2 "CitizenTech")
  * Edge Computing & Computer Systems · FIAP · Prof. Dr. Fábio H. Cabrini
  * Equipe Nexus Vision. Integrantes:
  *   Isac Nilton Fernandes de Oliveira — RM573282
@@ -12,9 +12,11 @@
 /*
  * atuadores.h — relés, LED RGB e buzzer.
  *
- * Relé 1 (contato NF) corta o aquecedor/degelo; relé 2 (contato NA) liga a ventoinha
- * de emergência. FALHA SEGURA: relé desenergizado = NF fechado = o equipamento funciona
- * como se o C-Shield não existisse. Por isso iniciarReles() é a PRIMEIRA coisa do setup().
+ * Relé 1 (contato NF em série com o aquecedor) corta o aquecedor/degelo quando acionado.
+ * Relé 2 é comutador da ventoinha: em repouso (NF) ela segue o controlador; acionado (NA),
+ * o C-Shield liga a ventoinha direto. FALHA SEGURA: relé desenergizado = o equipamento
+ * funciona como se o C-Shield não existisse. Por isso iniciarReles() é a PRIMEIRA coisa do
+ * setup().
  *
  * O LED e o buzzer não usam delay(): o padrão (fixo, pisca, bipe) é calculado a partir
  * de millis(), então o loop() nunca trava.
@@ -41,7 +43,7 @@ static void iniciarReles() {
   pinMode(PIN_RELE_VENT, OUTPUT);
 }
 
-// Energiza o relé 1 para cortar o aquecedor e o relé 2 para ligar a ventoinha.
+// Energiza o relé 1 para cortar o aquecedor e o relé 2 para o C-Shield ligar a ventoinha.
 // Só escreve no pino quando o valor muda.
 static void aplicarReles(bool cortaAquecedor, bool ligaVentoinha) {
   static int ultimoAquec = -1;
@@ -100,7 +102,7 @@ static void aplicarLed(Estado e, unsigned long agoraMs) { aplicarCor(corDoEstado
 // true se o buzzer deve soar neste instante. Função pura, sem estado.
 //   NORMAL        silêncio
 //   ATENCAO       1 bipe curto a cada BUZZER_INTERVALO_MS (10 s)
-//   FALHA_SENSOR  2 bipes curtos a cada BUZZER_INTERVALO_MS
+//   FALHA_SENSOR  1 bipe curto a cada BUZZER_INTERVALO_MS
 //   BLOQUEIO      intermitente (liga/desliga a cada BUZZER_INTERM_MS)
 //   CRITICO       contínuo
 static bool buzzerDeveSoar(Estado e, unsigned long agoraMs) {
@@ -108,8 +110,7 @@ static bool buzzerDeveSoar(Estado e, unsigned long agoraMs) {
   switch (e) {
     case ST_NORMAL:       return false;
     case ST_ATENCAO:      return fase < BUZZER_BIPE_MS;
-    case ST_FALHA_SENSOR: return fase < BUZZER_BIPE_MS ||
-                                 (fase >= 2 * BUZZER_BIPE_MS && fase < 3 * BUZZER_BIPE_MS);
+    case ST_FALHA_SENSOR: return fase < BUZZER_BIPE_MS;
     case ST_BLOQUEIO:     return ((agoraMs / BUZZER_INTERM_MS) % 2) == 0;
     case ST_CRITICO:      return true;
   }
