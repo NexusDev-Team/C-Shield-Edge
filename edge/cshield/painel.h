@@ -115,8 +115,8 @@ static void mostrarEstado(const Decisao& d, const Leitura& l, unsigned long agor
       if (l.valida && (l.temperatura > p.tMax || l.temperatura < p.tMin))
         snprintf(msg[n++], sizeof(msg[0]), "Restaurando temp");
       unsigned long s = d.travaRestanteMs / 1000UL;
-      if (s >= 100)    snprintf(msg[n++], sizeof(msg[0]), "Liberar em %lum", s / 60UL);
-      else if (s > 0)  snprintf(msg[n++], sizeof(msg[0]), "Liberar em %lus", s);
+      if (s >= 100)    snprintf(msg[n++], sizeof(msg[0]), "Liberacao em %lum", s / 60UL);
+      else if (s > 0)  snprintf(msg[n++], sizeof(msg[0]), "Liberacao em %lus", s);
       else             snprintf(msg[n++], sizeof(msg[0]), "Segure botao %lus", LIBERACAO_MS / 1000UL);
       break;
     }
