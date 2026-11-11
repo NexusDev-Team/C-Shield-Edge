@@ -93,3 +93,4 @@ Prioridade: **CRITICO > BLOQUEIO > FALHA_SENSOR > ATENCAO > NORMAL** (R19).
 - **R54 — Setpoint baixo.** QUANDO o setpoint comandado ficar abaixo de T_MIN, o bloqueio DEVE ser de frio (R52).
 - **R55 — LED azul.** ENQUANTO o bloqueio estiver ativo, o LED RGB DEVE ficar azul fixo, inclusive se o estado mostrado for CRITICO.
 - **R56 — Molde do LCD.** O LCD DEVE mostrar `Estado: <nome>` na linha 1 e, na linha 2, alternar a cada 2 s entre `Temp: <t>°C` e as mensagens do estado (motivo, `Restaurando temp`, `Liberar em Ns`, `Segure botao 3s`, exposição).
+- **R57 — Chave do ataque no bloqueio.** ENQUANTO o bloqueio estiver ativo, a chave do controlador que simula o ataque DEVE perder a função: a ventoinha de refrigeração simulada (LED verde, GPIO 16) só pode ser LIGADA de novo (chave em NORMAL) e nunca desligada. Sem bloqueio, ela segue a chave.

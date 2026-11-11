@@ -51,9 +51,9 @@
     [ "sw2:1", "bb1:tn.12", "black", [ "v0" ] ],
     [ "sw2:3", "bb1:tp.12", "red", [ "v0" ] ],
 
-    [ "r_vr:1", "bb1:tp.24", "red", [ "v0" ] ],
+    [ "r_vr:1", "esp:D16", "green", [ "v0" ] ],
     [ "r_vr:2", "led_vr:A", "green", [ "v0" ] ],
-    [ "led_vr:C", "sw2:2", "green", [ "v0" ] ],
+    [ "led_vr:C", "bb1:tn.24", "black", [ "v0" ] ],
 
     [ "btn1:1.l", "esp:D19", "green", [ "v0" ] ],
     [ "btn1:2.l", "bb1:tn.16", "black", [ "v0" ] ],

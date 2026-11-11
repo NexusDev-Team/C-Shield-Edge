@@ -21,6 +21,7 @@
 #include <cstdio>
 #include <string>
 #include "decisao.h"
+#include "simulacao.h"
 
 static int falhas = 0;
 static int total = 0;
@@ -546,6 +547,21 @@ static void teste_ataque_frio() {  // R52, R53, R54
   }
 }
 
+// Ventoinha de refrigeração do controlador (LED verde no Wokwi). Durante o bloqueio a chave do
+// ataque perde a função: só é possível LIGAR a ventoinha de novo, nunca desligá-la.
+static void teste_ventoinha_refrigeracao_no_bloqueio() {  // R57
+  std::printf("ventoinha de refrigeracao: no bloqueio so da para ligar de novo (R57)\n");
+  bool v = true;
+  v = ventoinhaRefrigeracaoSimulada(v, false, true);  CHECK(v);    // sem bloqueio segue a chave: normal
+  v = ventoinhaRefrigeracaoSimulada(v, false, false); CHECK(!v);   // o ataque desliga a ventoinha
+  v = ventoinhaRefrigeracaoSimulada(v, true, false);  CHECK(!v);   // bloqueio: continua desligada
+  v = ventoinhaRefrigeracaoSimulada(v, true, true);   CHECK(v);    // dá para ligar de novo
+  v = ventoinhaRefrigeracaoSimulada(v, true, false);  CHECK(v);    // atacar de novo não desliga
+  v = ventoinhaRefrigeracaoSimulada(v, true, false);  CHECK(v);
+  v = ventoinhaRefrigeracaoSimulada(v, false, false); CHECK(!v);   // liberado: volta a seguir a chave
+  v = ventoinhaRefrigeracaoSimulada(v, false, true);  CHECK(v);
+}
+
 int main() {
   teste_perfis();
   teste_validacao_temperatura();
@@ -573,6 +589,7 @@ int main() {
   teste_nomes();
   teste_alarme_ate_regularizar();
   teste_ataque_frio();
+  teste_ventoinha_refrigeracao_no_bloqueio();
   std::printf("\n%d verificacoes, %d falhas\n", total, falhas);
   return falhas == 0 ? 0 : 1;
 }

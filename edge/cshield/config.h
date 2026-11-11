@@ -53,6 +53,7 @@ static const char* const NOME_PRODUTO = "C-Shield";
 
 const int PIN_DHT       = 4;   // DHT22: temperatura e umidade próprias
 const int PIN_LDR       = 34;  // LDR (saída analógica): porta aberta
+const int PIN_LED_VENT_REFRIG = 16; // LED verde (só Wokwi): ventoinha de refrigeração do controlador, simulada
 const int PIN_CHAVE_SP  = 32;  // chave NORMAL/ATAQUE (só Wokwi): setpoint do controlador
 const int PIN_DEGELO    = 18;  // fio do controlador (maquete): degelo comandado; sem nada ligado fica em LOW
 const int PIN_BOTAO     = 19;  // botão de liberação presencial (INPUT_PULLUP)

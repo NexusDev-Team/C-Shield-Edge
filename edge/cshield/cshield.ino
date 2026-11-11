@@ -95,6 +95,7 @@ void setup() {
 
   iniciarLedRgb();
   iniciarBuzzer();
+  iniciarVentoinhaRefrigeracao();
   iniciarSensores();
   iniciarPainel();
   mostrarBoot();
@@ -112,6 +113,7 @@ void loop() {
 
   aplicarLed(decisao, agora);
   aplicarBuzzer(decisao, agora);
+  aplicarVentoinhaRefrigeracao(decisao.bloqueado, chaveControladorEmNormal());   // a chave só liga, no bloqueio
 
   // A decisão roda a cada 2 s, mas a contagem da trava precisa fluir segundo a segundo na
   // tela: recalcula o tempo restante a cada volta, só para o LCD (a decisão não muda).

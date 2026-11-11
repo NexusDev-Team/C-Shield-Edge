@@ -25,6 +25,7 @@
 #include <Arduino.h>
 #include "config.h"
 #include "decisao.h"
+#include "simulacao.h"
 
 // --- Relés ---
 
@@ -120,6 +121,24 @@ static bool buzzerDeveSoar(const Decisao& d, unsigned long agoraMs) {
 }
 
 static void iniciarBuzzer() { pinMode(PIN_BUZZER, OUTPUT); }
+
+// --- Ventoinha de refrigeração do controlador (só Wokwi: LED verde) ---
+
+static bool ventoinhaRefrigeracao = true;   // estado atual da ventoinha simulada
+
+// O LED verde é a ventoinha de refrigeração do controlador. Durante o bloqueio a chave do ataque
+// perde a função: só dá para ligar a ventoinha de novo (ver ventoinhaRefrigeracaoSimulada).
+static void iniciarVentoinhaRefrigeracao() {
+  pinMode(PIN_LED_VENT_REFRIG, OUTPUT);
+  digitalWrite(PIN_LED_VENT_REFRIG, ventoinhaRefrigeracao ? HIGH : LOW);
+}
+
+static void aplicarVentoinhaRefrigeracao(bool bloqueado, bool chaveEmNormal) {
+  bool nova = ventoinhaRefrigeracaoSimulada(ventoinhaRefrigeracao, bloqueado, chaveEmNormal);
+  if (nova == ventoinhaRefrigeracao) return;
+  ventoinhaRefrigeracao = nova;
+  digitalWrite(PIN_LED_VENT_REFRIG, nova ? HIGH : LOW);
+}
 
 // Liga ou desliga o tom só quando o estado do buzzer muda.
 static void aplicarBuzzer(const Decisao& d, unsigned long agoraMs) {

@@ -69,4 +69,13 @@ static float modeloTermicoDemo(float temperaturaMedida, bool ventoinhaLigada,
 #endif
 }
 
+// Ventoinha de refrigeração do controlador, simulada pelo LED verde (a do controlador, não a de
+// emergência). Sem bloqueio ela segue a chave NORMAL/ATAQUE: o ataque a desliga. Com o bloqueio
+// ativo a chave perde a função de ataque: só é possível LIGAR a ventoinha de novo (chave em
+// NORMAL), nunca desligá-la. Pura: sem Arduino.h, testada no computador.
+static inline bool ventoinhaRefrigeracaoSimulada(bool ligadaAntes, bool bloqueado, bool chaveEmNormal) {
+  if (!bloqueado) return chaveEmNormal;
+  return ligadaAntes || chaveEmNormal;
+}
+
 #endif

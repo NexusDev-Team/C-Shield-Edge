@@ -106,6 +106,16 @@ static bool botaoConsumirLiberacao() {
 }
 
 // Liga os sensores e as entradas. O botão usa o pull-up interno.
+// true quando a chave do controlador está em NORMAL (ventoinha de refrigeração permitida).
+// Só existe no Wokwi; na maquete (TEM_POT_SETPOINT = 0) a ventoinha do controlador é a real.
+static bool chaveControladorEmNormal() {
+#if TEM_POT_SETPOINT
+  return digitalRead(PIN_CHAVE_SP) == LOW;
+#else
+  return true;
+#endif
+}
+
 static void iniciarSensores() {
   dht.begin();
   // Sem chave no Wokwi o GPIO 18 fica solto; o pull-down o mantém em LOW (sem degelo)

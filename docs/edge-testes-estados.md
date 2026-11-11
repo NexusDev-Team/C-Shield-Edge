@@ -15,7 +15,7 @@ A lógica de decisão também tem testes automáticos no computador (`edge/test/
 
 ## Tabela de estados
 
-Legenda de relés: "Aquecedor" é o LED laranja no contato NF do relé 1 (aceso = aquecedor ligado, apagado = cortado). "Ventoinha" é a ventoinha de emergência, o LED azul no contato NA do relé 2. A ventoinha de refrigeração (LED verde) representa a do controlador: ligada direto na chave "Controlador", acende em NORMAL e apaga em ATAQUE, sem passar pelo firmware.
+Legenda de relés: "Aquecedor" é o LED laranja no contato NF do relé 1 (aceso = aquecedor ligado, apagado = cortado). "Ventoinha" é a ventoinha de emergência, o LED azul no contato NA do relé 2. A ventoinha de refrigeração (LED verde, GPIO 16) representa a do controlador: segue a chave "Controlador" (acende em NORMAL e apaga em ATAQUE) **até haver um bloqueio**. Durante o bloqueio a chave perde a função de ataque: só é possível ligar a ventoinha de novo (chave em NORMAL); levar a chave para ATAQUE não a desliga. Liberado o bloqueio, o LED volta a seguir a chave.
 
 | Estado | O que mexer no Wokwi | LED RGB | Buzzer | LCD (16x2) | Aquecedor / Ventoinha | Serial | Resultado |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -29,7 +29,7 @@ Legenda de relés: "Aquecedor" é o LED laranja no contato NF do relé 1 (aceso 
 | BLOQUEIO de frio (setpoint baixo) | Só com um setpoint abaixo de 2 °C (o controlador real; a chave "Controlador" do Wokwi só tem 5 e 45 °C) | Azul fixo | Apito inicial de 5 s | `Estado: Bloqueio` / `Setpoint 0°C` | aceso / apagado | `mt=SETPOINT_INVALIDO`, relés em repouso | |
 | CRITICO por frio | DHT22 em 0 °C ou menos (abaixo de 1) por 2 ciclos | Vermelho fixo | Contínuo até voltar à faixa | `Estado: Critico` | aceso / apagado (aquecedor liberado, sem ventoinha) | `st=CRITICO` | |
 | Aquecimento rápido com porta aberta | Igual ao anterior, mas com o LDR claro | Amarelo fixo | 1 bipe a cada 10 s | `Estado: Atencao` / `Porta aberta` | aceso / apagado | `st=ATENCAO` (não bloqueia) | |
-| Trava ignora ordem | Durante o BLOQUEIO, mexer na chave "Controlador" de novo (voltar para NORMAL e para ATAQUE) | Azul fixo | Conforme a temperatura | continua `Estado: Bloqueio` | apagado / aceso | `ordem do controlador IGNORADA (trava ativa)` | |
+| Trava ignora ordem | Durante o BLOQUEIO, mexer na chave "Controlador": voltar para NORMAL e depois para ATAQUE | Azul fixo | Conforme a temperatura | continua `Estado: Bloqueio` | apagado / aceso; o LED **verde** (refrigeração) acende ao ir para NORMAL e **não apaga** ao ir para ATAQUE | `ordem do controlador IGNORADA (trava ativa)` | |
 | CRITICO | DHT22 em 10 °C ou mais (acima de 9), ou 0 °C ou menos (abaixo de 1), por 2 ciclos | Vermelho fixo (azul se já havia bloqueio) | Contínuo enquanto a temperatura estiver fora da faixa | `Estado: Critico` / alterna `Temp: 10.0°C`, `Exposicao 0.1` (e `Bloqueio ativo`) | apagado / aceso | `st=CRITICO` | |
 | FALHA_SENSOR | Desconectar o fio de dados do DHT22 (ou apagar a conexão `dht1:SDA` no diagrama), por 2 ciclos | Amarelo piscando | 2 bipes a cada 10 s | `Estado: Falha` / `Sensor sem dado` | aceso / apagado | `st=FALHA_SENSOR`, `t=-999.0` | |
 | Liberação com temperatura boa | Em BLOQUEIO, trazer `sp` de volta para 2 a 8 e a temperatura para a faixa; esperar o `trava=0s`; segurar o botão por 3 s | Volta ao verde | Silêncio | `Liberando...` com barra de 16 blocos, depois `Estado: Liberado` / `Controle normal` por 3 s, depois `Estado: Ideal` | aceso / apagado | `st=NORMAL` | |
