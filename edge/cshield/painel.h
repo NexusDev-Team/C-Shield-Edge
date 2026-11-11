@@ -26,6 +26,7 @@
  *   Liberando   "Liberando..." / barra de progresso de 16 blocos (botão segurado)
  *   Trava       "Trava ativa" / "Aguarde 45s" (botão segurado antes de a trava mínima acabar)
  *   Liberado    "Estado: Liberado" / "Controle normal" (por LIBERADO_TELA_MS após liberar)
+ *   Sem bloqueio "Sem bloqueio" / "Nada a liberar" (botão apertado sem bloqueio ativo)
  */
 #ifndef PAINEL_H
 #define PAINEL_H
@@ -150,6 +151,12 @@ static void mostrarTravaAtiva(unsigned long travaRestanteMs) {
 static void mostrarLiberado() {
   escreverLinha(0, "Estado: Liberado");
   escreverLinha(1, "Controle normal");
+}
+
+// Botão apertado sem nenhum bloqueio ativo: não há nada a liberar.
+static void mostrarSemBloqueio() {
+  escreverLinha(0, "Sem bloqueio");
+  escreverLinha(1, "Nada a liberar");
 }
 
 // Tela de liberação: título e barra de 16 blocos que enche em LIBERACAO_MS.
