@@ -19,12 +19,11 @@
     <a href="https://wokwi.com/projects/480328417992209409"><img src="https://img.shields.io/badge/%F0%9F%9B%A1%EF%B8%8F_SIMULA%C3%87%C3%83O_NO_WOKWI-2563EB?style=for-the-badge&logo=arduino&logoColor=white" alt="Simulação no Wokwi"></a>
     <a href="https://github.com/NexusDev-Team/C-Shield-Edge"><img src="https://img.shields.io/badge/%F0%9F%92%BB_REPOSIT%C3%93RIO_EDGE-0B1F3A?style=for-the-badge&logo=github&logoColor=white" alt="Repositório Edge"></a>
     <a href="docs/edge-testes-estados.md"><img src="https://img.shields.io/badge/%F0%9F%A7%AA_TESTES_DOS_ESTADOS-00B8D9?style=for-the-badge&logo=readthedocs&logoColor=0B1F3A" alt="Testes dos estados"></a>
-    <a href="docs/edge-roteiro-video.md"><img src="https://img.shields.io/badge/%F0%9F%8E%AC_ROTEIRO_DO_V%C3%8DDEO-34D399?style=for-the-badge&logo=youtube&logoColor=0B1F3A" alt="Roteiro do vídeo"></a>
+    <!-- TODO: trocar o href "#" pelo link do vídeo no YouTube quando for publicado -->
+    <a href="#"><img src="https://img.shields.io/badge/%E2%96%B6%EF%B8%8F_V%C3%8DDEO_NO_YOUTUBE-34D399?style=for-the-badge&logo=youtube&logoColor=0B1F3A" alt="Vídeo no YouTube"></a>
   </p>
 
   <p>
-    <a href="docs/edge-contrato-web.md">Contrato com o site</a>
-    &middot;
     <a href="https://github.com/NexusDev-Team/C-Shield-Edge/issues">Reportar problema</a>
   </p>
 
