@@ -30,7 +30,6 @@
   <p>
     <img src="https://img.shields.io/badge/FIAP-Global_Solution_2026.2-2563EB?style=flat-square" alt="FIAP Global Solution 2026.2">
     <img src="https://img.shields.io/badge/CitizenTech-Edge_Computing-0B1F3A?style=flat-square" alt="CitizenTech Edge Computing">
-    <img src="https://img.shields.io/badge/entrega-11%2F11%2F2026-00B8D9?style=flat-square" alt="Entrega 11/11/2026">
   </p>
 
 </div>
