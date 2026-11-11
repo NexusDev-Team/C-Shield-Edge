@@ -115,6 +115,6 @@ Rodar todas as verificações automáticas (testes, grep sem `subscribe`, grep s
 | T15, T16 | Concluídas | `diagram.json` válido; 13 pinos conferidos; pinos de relé e LCD a conferir no Wokwi |
 | T17 `provisionar.sh` | Concluída | `bash -n` e `DRY_RUN=1` (8 corpos JSON válidos, nenhum com `commands`) |
 | T18 | Fora da entrega | correção C2 |
-| T18b | Roteiro pronto, **não executado** | EC2 sem resposta em 10/11 |
+| T18b | **Executado e aprovado em 11/11/2026** | `state` foi de NORMAL para BLOQUEIO e `blocks` de 0 para 1 no Orion; registro em `docs/edge-testes-estados.md` |
 | T19 | Não feita | baixa prioridade (C3) |
 | T20, T21 | Concluídas | `docs/edge-testes-estados.md`, `docs/edge-roteiro-video.md` |

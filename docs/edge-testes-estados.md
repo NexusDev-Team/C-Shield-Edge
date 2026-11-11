@@ -48,7 +48,7 @@ Observações para a gravação:
 
 Objetivo: confirmar que a simulação do Wokwi publica no FIWARE e que `st` e `bq` mudam no Orion quando a chave "Controlador" vai para ATAQUE.
 
-**Situação em 10/11/2026:** este teste **não foi executado** pelo agente. A EC2 estava sem resposta (`curl http://3.215.3.216:1026/version` sem retorno) e o Wokwi não roda de dentro do terminal do agente. Fica o passo a passo para a equipe; depois de rodar, preencha os campos de resposta abaixo.
+**Histórico:** em 10/11/2026 este teste ainda não tinha sido executado pelo agente. A EC2 estava sem resposta (`curl http://3.215.3.216:1026/version` sem retorno) e o Wokwi não roda de dentro do terminal do agente. Fica o passo a passo para a equipe; depois de rodar, preencha os campos de resposta abaixo.
 
 ### Passo a passo
 
@@ -74,11 +74,11 @@ Objetivo: confirmar que a simulação do Wokwi publica no FIWARE e que `st` e `b
 
 | Campo | Valor |
 | --- | --- |
-| Data e quem executou | |
-| IP da EC2 usado | |
-| Resposta com NORMAL (passo 5) | |
-| Resposta com BLOQUEIO (passo 6) | |
-| Resultado | |
+| Data e quem executou | 11/11/2026, a equipe (Wokwi rodando na aba do navegador, consulta pelo Git Bash) |
+| IP da EC2 usado | `3.215.3.216` |
+| Resposta com NORMAL (passo 5) | `{"id":"urn:ngsi-ld:CShield:001","type":"CShield","TimeInstant":"2026-11-11T03:26:56.078Z","blocks":0,"defrost":0,"exposure":0,"humidity":80,"luminosity":28,"reason":"-","setpoint":5,"state":"NORMAL","temperature":4.9}` |
+| Resposta com BLOQUEIO (passo 6) | `{"id":"urn:ngsi-ld:CShield:001","type":"CShield","TimeInstant":"2026-11-11T03:28:14.697Z","blocks":1,"defrost":0,"exposure":0,"humidity":80,"luminosity":28,"reason":"SETPOINT_INVALIDO","setpoint":45,"state":"BLOQUEIO","temperature":4.9}` |
+| Resultado | **OK.** Provisionamento: service group já existia (409), device criado (201) e 6 subscriptions criadas (201). Com a chave em ATAQUE, o Orion passou de `NORMAL`/`blocks=0` para `BLOQUEIO`/`blocks=1` em cerca de 6 s, com `reason=SETPOINT_INVALIDO` e `setpoint=45`. |
 
 ## Limitações conhecidas
 
