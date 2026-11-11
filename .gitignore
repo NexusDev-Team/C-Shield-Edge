@@ -6,3 +6,6 @@ docs/specs/
 # Saídas de teste e arquivos temporários
 t18-resultado.txt
 *.exe
+
+# Resumo temporário para o planejamento geral (apagar depois)
+RESUMO-EDGE-PARA-PLANNER.md
