@@ -1,0 +1,8 @@
+# Arquivos de trabalho do agente e planejamento: ficam só na máquina, fora do repositório.
+CLAUDE.md
+PLANO-CSHIELD.md
+docs/specs/
+
+# Saídas de teste e arquivos temporários
+t18-resultado.txt
+*.exe
