@@ -6,7 +6,7 @@
 
 A equipe decidiu: **o vídeo de Edge usa só o simulador Wokwi, sem maquete.** As seis correções abaixo já estão refletidas nas seções afetadas deste plano.
 
-- **C1. Três camadas sem hardware.** A simulação do Wokwi conecta no Wi-Fi `Wokwi-GUEST`, publica no FIWARE da EC2 (tópico `/TEF/cshield001/attrs`) e o site da GS mostra os dados na rota `/ao-vivo`. O firmware não muda por causa disso; apenas garantir que a publicação funcione a partir do Wokwi.
+- **C1. Três camadas sem hardware.** A simulação do Wokwi conecta no Wi-Fi `Wokwi-GUEST`, publica no FIWARE da EC2 (tópico `/TEF/cshield001/attrs`) e o site da GS mostra os dados na rota `/simulador-real`. O firmware não muda por causa disso; apenas garantir que a publicação funcione a partir do Wokwi.
 - **C2. T18 (controlador vulnerável) fica fora da entrega de Edge.** Não fazer agora. Só será feito se a equipe montar a maquete para o pitch e pedir.
 - **C3. T19 (ligações da maquete) vira baixa prioridade.** Fazer por último, só se sobrar tempo.
 - **C4. Nova tarefa T18b — teste ponta a ponta sem hardware** (detalhada na Fase D).
@@ -98,7 +98,7 @@ Entrega: **link público do Wokwi** (abre e roda sem ajustes, diagrama organizad
 | Qualidade do código | 15 | Funções, constantes, `millis()`, comentários, saída no Serial Monitor |
 | Vídeo | 25 | Ideia clara e simulação comentada mostrando todos os estados |
 
-O objetivo da disciplina também pede **3 camadas** (dispositivo IoT, back-end FIWARE e dashboard) e um sistema que funcione **online ou offline**. As 3 camadas são demonstradas **sem hardware** (C1): Guardião simulado no Wokwi → FIWARE na EC2 → site da GS na rota `/ao-vivo`.
+O objetivo da disciplina também pede **3 camadas** (dispositivo IoT, back-end FIWARE e dashboard) e um sistema que funcione **online ou offline**. As 3 camadas são demonstradas **sem hardware** (C1): Guardião simulado no Wokwi → FIWARE na EC2 → site da GS na rota `/simulador-real`.
 
 ### Objetivo desta sessão
 
@@ -303,7 +303,7 @@ Nicolas Cinel — RM572940
 
 - [ ] **T19.** (Baixa prioridade — C3: fazer por último, depois de T20 e T21, só se sobrar tempo.) `docs/edge-ligacoes-maquete.md`: tabela de ligações dos dois ESP32, o circuito do aquecedor (fonte 12 V → relé do controlador NA → relé do Guardião NF → resistor 22 Ω 10 W → fonte) e os cuidados de segurança (só baixa tensão, resistor sobre chapinha de alumínio, longe do plástico, nunca ligado sem supervisão).
 - [ ] **T20.** `docs/edge-testes-estados.md`: para cada estado, o que mexer no Wokwi (slider do DHT22, LDR, potenciômetro, chave, botão), o que deve aparecer no LED, buzzer, LCD, relés e Serial, e uma coluna "resultado" para a equipe preencher.
-- [ ] **T21.** `docs/edge-roteiro-video.md`: roteiro de até 7 min na ordem da rubrica. (1) A ideia: cidadão, problema em uma frase, onde o Guardião fica e ODS 3, 9 e 2. (2) Cada componente e por que está ali. (3) Os limites e o trecho de `avaliar()`. (4) A remoção do `subscribe`: "aqui não entra nada". (5) A simulação no Wokwi passando por todos os estados, inclusive a falha de sensor; o "ataque" é girar o potenciômetro do setpoint ou ligar a chave do degelo, e os LEDs laranja e azul mostram o aquecedor cortado e a ventoinha ligada. (6) As 3 camadas: o Serial mostrando a publicação, a entidade atualizando no FIWARE e o site `/ao-vivo` registrando o bloqueio. Indicar o tempo de cada parte. Incluir o lembrete: o Wokwi só publica enquanto a aba do navegador estiver aberta e a simulação ativa; ligar a EC2 e testar o site 10 minutos antes de gravar.
+- [ ] **T21.** `docs/edge-roteiro-video.md`: roteiro de até 7 min na ordem da rubrica. (1) A ideia: cidadão, problema em uma frase, onde o Guardião fica e ODS 3, 9 e 2. (2) Cada componente e por que está ali. (3) Os limites e o trecho de `avaliar()`. (4) A remoção do `subscribe`: "aqui não entra nada". (5) A simulação no Wokwi passando por todos os estados, inclusive a falha de sensor; o "ataque" é girar o potenciômetro do setpoint ou ligar a chave do degelo, e os LEDs laranja e azul mostram o aquecedor cortado e a ventoinha ligada. (6) As 3 camadas: o Serial mostrando a publicação, a entidade atualizando no FIWARE e o site `/simulador-real` registrando o bloqueio. Indicar o tempo de cada parte. Incluir o lembrete: o Wokwi só publica enquanto a aba do navegador estiver aberta e a simulação ativa; ligar a EC2 e testar o site 10 minutos antes de gravar.
 
 ---
 

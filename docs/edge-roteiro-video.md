@@ -6,12 +6,12 @@ Projeto C-Shield · Nexus Vision · GS 2026.2 "CitizenTech". Vídeo no YouTube d
 
 - [ ] Ligar a EC2 e confirmar o IP elástico (`curl http://<IP>:1026/version`). Se o IP mudou, atualizar `BROKER_MQTT` no `config.h`.
 - [ ] Rodar `FIWARE_HOST=<IP> bash edge/fiware/provisionar.sh` (pode rodar de novo sem duplicar).
-- [ ] Abrir o site da GS na rota `/ao-vivo` e confirmar que ele responde.
+- [ ] Abrir o site da GS na rota `/simulador-real` e confirmar que ele responde.
 - [ ] Abrir o Wokwi, iniciar a simulação e conferir no Serial `rede=OK`.
 - [ ] **Lembrete: o Wokwi só publica enquanto a aba do navegador estiver aberta e a simulação ativa.** Não minimize nem feche a aba durante a gravação.
 - [ ] Deixar o ponto de partida: DHT22 em 5 °C, LDR escuro, `sp=` entre 2 e 8 no Serial, estado NORMAL.
 - [ ] Conferir o relógio local: se for entre 6h e 7h ou entre 18h e 19h, o degelo não bloqueia na hora (ver `docs/edge-testes-estados.md`).
-- [ ] Ter abertas, em abas separadas: o Wokwi, o `decisao.h` (função `avaliar`), o `rede.h`, o terminal com o `curl` do Orion e o site `/ao-vivo`.
+- [ ] Ter abertas, em abas separadas: o Wokwi, o `decisao.h` (função `avaliar`), o `rede.h`, o terminal com o `curl` do Orion e o site `/simulador-real`.
 
 ## 1. A ideia (0:00 a 1:15 · 75 s)
 
@@ -88,7 +88,7 @@ Dica de gravação: se a trava de 60 s atrapalhar o ritmo, faça a parte do CRIT
 
 ## 6. As 3 camadas funcionando (6:15 a 6:50 · 35 s)
 
-**Na tela:** divisão com o Serial do Wokwi, o terminal com o `curl` no Orion e o site `/ao-vivo`.
+**Na tela:** divisão com o Serial do Wokwi, o terminal com o `curl` no Orion e o site `/simulador-real`.
 
 **Fala e ações:**
 
@@ -99,7 +99,7 @@ Dica de gravação: se a trava de 60 s atrapalhar o ritmo, faça a parte do CRIT
     -H "fiware-service: smart" -H "fiware-servicepath: /"
   ```
   Mostrar `state`, `reason` e `blocks` refletindo o bloqueio.
-- "Camada 3, o dashboard: o site da GS na rota `/ao-vivo` registrando o bloqueio."
+- "Camada 3, o dashboard: o site da GS na rota `/simulador-real` registrando o bloqueio."
 - Fechar: "O C-Shield vê de longe, mas só obedece de perto."
 
 ## 7. Encerramento (6:50 a 7:00 · 10 s)
@@ -112,5 +112,5 @@ Dica de gravação: se a trava de 60 s atrapalhar o ritmo, faça a parte do CRIT
 - [ ] Todos os 5 estados apareceram, inclusive a falha de sensor.
 - [ ] O corte do aquecimento (LED laranja apagando) e a troca de ventoinhas (verde apagando, azul acendendo) ficaram visíveis.
 - [ ] O `grep` sem `subscribe` apareceu com saída vazia.
-- [ ] O site `/ao-vivo` mostrou o bloqueio.
+- [ ] O site `/simulador-real` mostrou o bloqueio.
 - [ ] O vídeo está público ou não listado, com o link do Wokwi na descrição.

@@ -16,7 +16,7 @@ Entrega: link público do Wokwi (roda sem ajustes, diagrama organizado, código 
 
 O projeto Vinheria Full (`C:\Users\isacn\desktop\projetovinheria`, repositório `zackdevbr/Projeto-VinheriaFull`) é só referência: reaproveitar padrões de firmware, FIWARE e Postman consultando uma cópia **fora** deste repositório (`../ref/vinheria`). Não copiar o repositório inteiro.
 
-**Repositórios separados.** Este repositório (`c-shield-edge`) contém **só** o trabalho de Edge: `edge/`, `docs/specs/edge/` e `docs/edge-*.md`, com a estrutura de pastas do plano. O site de Front e Web (que hospeda a rota `/ao-vivo`) fica no repositório `c-shield-web`, ainda não criado; nenhum arquivo do site entra aqui, e nenhum arquivo de Edge entra lá. O `README.md` dos dois repositórios abre com a Ficha CitizenTech e traz um link para o outro repositório.
+**Repositórios separados.** Este repositório (`c-shield-edge`) contém **só** o trabalho de Edge: `edge/`, `docs/specs/edge/` e `docs/edge-*.md`, com a estrutura de pastas do plano. O site de Front e Web (que hospeda a rota `/simulador-real`) fica no repositório `c-shield-web`, ainda não criado; nenhum arquivo do site entra aqui, e nenhum arquivo de Edge entra lá. O `README.md` dos dois repositórios abre com a Ficha CitizenTech e traz um link para o outro repositório.
 
 Plano completo e autoritativo: `PLANO-CSHIELD.md` (inclui rubrica, mapa de pinos, estados, regras de bloqueio, payload FIWARE e as tarefas T1 a T21). Em caso de divergência entre este arquivo e o plano, o plano manda nos detalhes de implementação; este arquivo manda no processo de trabalho. Método do plano: spec-driven. Primeiro a especificação (Fase A), parada obrigatória para aprovação da equipe (T5), depois o código.
 
@@ -64,7 +64,7 @@ Não trocar sem decisão explícita do usuário.
 - **Firmware:** C++ (`.ino` mais headers `.h`), ESP32, simulação no Wokwi. Bibliotecas: `PubSubClient` (somente publicação), `DHT sensor library`, `Adafruit Unified Sensor`, `LiquidCrystal I2C` (display LCD 16x2 I2C no lugar do OLED, decisão de 10/11).
 - **Lógica de decisão:** `decisao.h` pura, sem `Arduino.h`, testada no computador com `g++ -std=c++17` (`edge/test/test_decisao.cpp`).
 - **Middleware:** FIWARE (stack `fabiocabrini/fiware` em Docker na AWS EC2) — Orion 1026, IoT Agent MQTT 4041, STH-Comet 8666, Mosquitto 1883. Provisionamento por `curl` em `edge/fiware/provisionar.sh`.
-- **Dashboard (terceira camada):** o site da GS, rota `/ao-vivo`, lê os dados do FIWARE. Não faz parte deste escopo de Edge; aqui basta garantir que a publicação a partir do Wokwi chegue ao Orion. Vídeo de Edge usa só o Wokwi, sem maquete (correção de escopo de 10/11, `PLANO-CSHIELD.md` §0).
+- **Dashboard (terceira camada):** o site da GS, rota `/simulador-real`, lê os dados do FIWARE. Não faz parte deste escopo de Edge; aqui basta garantir que a publicação a partir do Wokwi chegue ao Orion. Vídeo de Edge usa só o Wokwi, sem maquete (correção de escopo de 10/11, `PLANO-CSHIELD.md` §0).
 
 **Gate de design (herdado):** nenhuma decisão visual do front é tomada antes de o usuário enviar anexos e exemplos de referência; o design é planejado em Opus e só depois implementado.
 
