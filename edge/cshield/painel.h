@@ -83,10 +83,11 @@ static const char* nomeEstadoLcd(Estado e) {
   return "?";
 }
 
-// Motivo do bloqueio em até 16 colunas. O setpoint mostra o valor recebido.
-static void motivoNoLcd(char* buf, size_t n, Motivo m, float setpoint) {
+// Motivo do bloqueio em até 16 colunas. A alteração de setpoint mostra só o motivo: o valor
+// recebido não aparece (a temperatura da câmara já tem a sua própria mensagem).
+static void motivoNoLcd(char* buf, size_t n, Motivo m) {
   switch (m) {
-    case MT_SETPOINT_INVALIDO:   snprintf(buf, n, "Setpoint %.0f" GRAU "C", setpoint); break;
+    case MT_SETPOINT_INVALIDO:   snprintf(buf, n, "Alt. de Setpoint"); break;   // alteração de setpoint
     case MT_DEGELO_FORA_HORARIO: snprintf(buf, n, "Degelo fora hora"); break;
     case MT_DEGELO_LONGO:        snprintf(buf, n, "Degelo longo"); break;
     case MT_AQUECIMENTO_RAPIDO:  snprintf(buf, n, "Aquec. rapido"); break;
@@ -112,7 +113,7 @@ static void mostrarEstado(const Decisao& d, const Leitura& l, unsigned long agor
       snprintf(msg[n++], sizeof(msg[0]), "%s", d.motivo == MT_PORTA_ABERTA ? "Porta aberta" : "Temp fora faixa");
       break;
     case ST_BLOQUEIO: {
-      motivoNoLcd(msg[n++], sizeof(msg[0]), d.motivo, l.setpoint);
+      motivoNoLcd(msg[n++], sizeof(msg[0]), d.motivo);
       if (l.valida && (l.temperatura > p.tMax || l.temperatura < p.tMin))
         snprintf(msg[n++], sizeof(msg[0]), "Restaurando temp");
       unsigned long s = d.travaRestanteMs / 1000UL;
