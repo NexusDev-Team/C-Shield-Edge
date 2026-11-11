@@ -92,3 +92,7 @@ Entradas: temperatura, umidade, luz (porta), setpoint, degelo, hora e o botão d
 ```
 
 O emulador não depende de nada externo. O simulador real depende da EC2 ligada e do Wokwi (ou ESP32) publicando.
+
+## Aviso futuro: versão da lógica em JavaScript
+
+O emulador do site precisa da lógica de `avaliar()` em JavaScript. Fica **como trabalho futuro**, não feito agora: escrever uma versão em JavaScript da `decisao.h` e portar os casos de `edge/test/test_decisao.cpp` como testes, para o emulador se comportar igual ao firmware. Enquanto isso não existe, quem fizer o emulador deve seguir a seção 3 e conferir manualmente contra os testes do C++.

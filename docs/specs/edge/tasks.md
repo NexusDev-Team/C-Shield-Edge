@@ -118,3 +118,9 @@ Rodar todas as verificações automáticas (testes, grep sem `subscribe`, grep s
 | T18b | **Executado e aprovado em 11/11/2026** | `state` foi de NORMAL para BLOQUEIO e `blocks` de 0 para 1 no Orion; registro em `docs/edge-testes-estados.md` |
 | T19 | Não feita | baixa prioridade (C3) |
 | T20, T21 | Concluídas | `docs/edge-testes-estados.md`, `docs/edge-roteiro-video.md` |
+
+## Trabalho futuro (não feito)
+
+- **Porta JavaScript da `decisao.h`** com os testes do `test_decisao.cpp`, para o emulador do `c-shield-web` (rota `/emulador`) se comportar igual ao firmware. Detalhes em `docs/edge-contrato-web.md`.
+- **Terceiro relé** para o C-Shield aquecer sozinho num ataque de frio (hoje o relé 1 só consegue cortar o aquecedor, nunca ligá-lo).
+- **Calibração com a DPS** das taxas de aquecimento e de resfriamento (`TAXA_MAX_C_POR_MIN` e `TAXA_MAX_RESFRIAMENTO_C_POR_MIN`, hoje provisórias).
