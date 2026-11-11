@@ -41,6 +41,8 @@ static Decisao  decisao;      // última decisão
 static char     payload[160]; // última linha UltraLight pronta para publicar
 static bool     eventoPendente = false;  // bloqueio novo ainda não publicado
 static unsigned long liberadoAteMs = 0;  // até quando o LCD mostra "BLOQUEIO LIBERADO"
+static unsigned long semBloqueioAteMs = 0; // até quando o LCD mostra "Sem bloqueio" (botão sem bloqueio ativo)
+static bool          botaoApertadoAntes = false;  // para avisar no Serial só na hora de apertar
 
 // Imprime uma linha por ciclo de decisão, com os mesmos nomes do payload.
 static void imprimirSerial() {
@@ -122,12 +124,22 @@ void loop() {
     decisao.travaRestanteMs = decorrido >= TRAVA_MS ? 0 : TRAVA_MS - decorrido;
   }
 
-  // LCD: boot por um instante, barra de liberação enquanto segura o botão, senão o estado.
+  // Botão apertado sem bloqueio ativo: avisa que não há nada a liberar (no LCD e uma vez no Serial).
+  const bool apertado = botaoProgressoPct() > 0;
+  if (apertado && !decisao.bloqueado) {
+    semBloqueioAteMs = agora + LIBERADO_TELA_MS;
+    if (!botaoApertadoAntes) Serial.printf("[%s] botao apertado: nao ha bloqueio ativo\n", ID_DEVICE);
+  }
+  botaoApertadoAntes = apertado;
+
+  // LCD: boot por um instante, avisos do botão, barra de liberação enquanto segura, senão o estado.
   if (agora < BOOT_TELA_MS) {
     // mantém a tela de boot
   } else if (agora < liberadoAteMs) {
     mostrarLiberado();        // confirma a liberação por LIBERADO_TELA_MS
-  } else if (botaoProgressoPct() > 0) {
+  } else if (agora < semBloqueioAteMs) {
+    mostrarSemBloqueio();     // o botão foi apertado, mas não há bloqueio para liberar
+  } else if (apertado) {
     if (decisao.travaRestanteMs > 0) mostrarTravaAtiva(decisao.travaRestanteMs);
     else                             mostrarLiberacao(botaoProgressoPct());
   } else {

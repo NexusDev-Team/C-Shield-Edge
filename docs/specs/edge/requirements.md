@@ -94,3 +94,4 @@ Prioridade: **CRITICO > BLOQUEIO > FALHA_SENSOR > ATENCAO > NORMAL** (R19).
 - **R55 — LED azul.** ENQUANTO o bloqueio estiver ativo, o LED RGB DEVE ficar azul fixo, inclusive se o estado mostrado for CRITICO.
 - **R56 — Molde do LCD.** O LCD DEVE mostrar `Estado: <nome>` na linha 1 e, na linha 2, alternar a cada 2 s entre `Temp: <t>°C` e as mensagens do estado (motivo, `Restaurando temp`, `Liberacao em Ns`, `Segure botao 3s`, exposição).
 - **R57 — Chave do ataque no bloqueio.** ENQUANTO o bloqueio estiver ativo, a chave do controlador que simula o ataque DEVE perder a função: a ventoinha de refrigeração simulada (LED verde, GPIO 16) só pode ser LIGADA de novo (chave em NORMAL) e nunca desligada. Sem bloqueio, ela segue a chave.
+- **R58 — Botão sem bloqueio.** QUANDO o botão for apertado sem nenhum bloqueio ativo, o LCD DEVE mostrar `Sem bloqueio` / `Nada a liberar` por `LIBERADO_TELA_MS` e o Serial DEVE registrar que não há bloqueio ativo.
