@@ -20,8 +20,8 @@
 #   FIWARE_HOST=1.2.3.4 bash edge/fiware/provisionar.sh   # outro IP
 #   DRY_RUN=1 bash edge/fiware/provisionar.sh             # só mostra o que faria
 #
-# Pode ser rodado mais de uma vez: service group e device existentes (HTTP 409) contam
-# como sucesso, e a subscription só é criada se ainda não existir.
+# Pode ser rodado mais de uma vez: o service group existente (HTTP 409) conta como sucesso, o
+# device é recriado com a lista de atributos atual e a subscription só é criada se ainda não existir.
 
 set -u
 
@@ -44,6 +44,17 @@ ORION_URL="http://${FIWARE_HOST}:${ORION_PORT}"
 # Atributos do device: object_id curto (vai no payload UltraLight) -> nome longo (Orion/STH).
 # Os de telemetria e estado são os que vão para o histórico do STH-Comet (seção abaixo).
 ATRIBUTOS_STH=(temperature humidity luminosity state blocks exposure)
+
+# Eventos de cartão NFC (liberação presencial). Cada evento publica quem foi, e um contador
+# que SEMPRE muda; por isso a subscription dispara pelo contador (condição) e leva junto os
+# atributos do evento (notificação). Assim o histórico ganha uma linha por liberação ou
+# recusa, mesmo quando o mesmo papel libera duas vezes seguidas (o valor de releasedBy
+# repetido não contaria como mudança sozinho).
+#   formato: "descrição|atributo-condição|atributos-notificados (separados por espaço)"
+EVENTOS_STH=(
+  "liberacao|releaseCount|releasedBy releaseCount"
+  "recusa|refusalCount|refusedBy refusedReason refusalCount"
+)
 
 # --- Funções ---
 
@@ -102,11 +113,25 @@ corpo_device=$(cat <<EOF
     { "object_id": "st", "name": "state",       "type": "Text" },
     { "object_id": "mt", "name": "reason",      "type": "Text" },
     { "object_id": "bq", "name": "blocks",      "type": "Integer" },
-    { "object_id": "ex", "name": "exposure",    "type": "Float" }
+    { "object_id": "ex", "name": "exposure",    "type": "Float" },
+    { "object_id": "lb", "name": "releasedBy",   "type": "Text" },
+    { "object_id": "nl", "name": "releaseCount", "type": "Integer" },
+    { "object_id": "rj", "name": "refusedBy",    "type": "Text" },
+    { "object_id": "rm", "name": "refusedReason","type": "Text" },
+    { "object_id": "nr", "name": "refusalCount", "type": "Integer" }
   ]
 } ] }
 EOF
 )
+# O IoT Agent responde 409 se o device já existe e não atualiza os atributos. Para que uma lista
+# nova de atributos (como a dos eventos de cartão) entre em vigor, apaga o device antes (404 =
+# ainda não existia, sem problema). A entidade no Orion e o histórico no STH-Comet continuam.
+codigo_del=$(chamar DELETE "${IOTA_URL}/iot/devices/${DEVICE_ID}")
+case "$codigo_del" in
+  2??|404) echo "ok    device ${DEVICE_ID} removido para recriar (HTTP ${codigo_del})" ;;
+  000) echo "ERRO  sem resposta de ${FIWARE_HOST}. A EC2 está ligada?" >&2; exit 1 ;;
+  *)   echo "ERRO  ao remover o device ${DEVICE_ID}: HTTP ${codigo_del}" >&2; exit 1 ;;
+esac
 conferir "$(chamar POST "${IOTA_URL}/iot/devices" "$corpo_device")" "device ${DEVICE_ID} (sem comandos)"
 
 # --- 3. Subscriptions do Orion para o STH-Comet (uma por atributo, como na Vinheria) ---
@@ -118,28 +143,45 @@ else
     -H "fiware-service: ${SERVICE}" -H "fiware-servicepath: ${SERVICE_PATH}")
 fi
 
-for attr in "${ATRIBUTOS_STH[@]}"; do
-  descricao="C-Shield STH ${attr}"
+# Cria uma subscription Orion -> STH-Comet, se ainda não existir.
+# $1 descrição (identifica a subscription), $2 atributo que dispara, $3 atributos notificados
+# (separados por espaço), $4 nome curto para a mensagem.
+assinar() {
+  local descricao="$1" condicao="$2" notificados="$3" nome="$4"
   if echo "$existentes" | grep -qF "\"${descricao}\""; then
-    echo "ok    subscription ${attr} (já existia)"
-    continue
+    echo "ok    subscription ${nome} (já existia)"
+    return 0
   fi
+  local lista="" a
+  for a in $notificados; do lista="${lista:+${lista}, }\"${a}\""; done
+  local corpo_sub
   corpo_sub=$(cat <<EOF
 {
   "description": "${descricao}",
   "subject": {
     "entities": [ { "id": "${ENTITY_ID}", "type": "${ENTITY_TYPE}" } ],
-    "condition": { "attrs": [ "${attr}" ] }
+    "condition": { "attrs": [ "${condicao}" ] }
   },
   "notification": {
     "http": { "url": "http://${FIWARE_HOST}:${STH_PORT}/notify" },
-    "attrs": [ "${attr}" ],
+    "attrs": [ ${lista} ],
     "attrsFormat": "legacy"
   }
 }
 EOF
 )
-  conferir "$(chamar POST "${ORION_URL}/v2/subscriptions" "$corpo_sub")" "subscription ${attr} -> STH-Comet"
+  conferir "$(chamar POST "${ORION_URL}/v2/subscriptions" "$corpo_sub")" "subscription ${nome} -> STH-Comet"
+}
+
+# Telemetria e estado: uma subscription por atributo, que dispara quando ele muda.
+for attr in "${ATRIBUTOS_STH[@]}"; do
+  assinar "C-Shield STH ${attr}" "$attr" "$attr" "$attr"
+done
+
+# Eventos de cartão: dispara pelo contador e leva o evento inteiro.
+for evento in "${EVENTOS_STH[@]}"; do
+  IFS='|' read -r nome condicao notificados <<< "$evento"
+  assinar "C-Shield STH evento ${nome}" "$condicao" "$notificados" "evento ${nome}"
 done
 
 echo
