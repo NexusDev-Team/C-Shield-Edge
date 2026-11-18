@@ -18,11 +18,13 @@
  * perigosa do controlador, corta o aquecimento/degelo por relé, liga a ventoinha de
  * emergência e entra em bloqueio. Alerta no local (LED RGB, buzzer, LCD) e SÓ ENVIA dados
  * ao FIWARE: não existe código que receba ordens pela rede. A liberação do bloqueio é
- * presencial (botão por 3 s).
+ * presencial: só um cartão NFC cadastrado libera, e cada
+ * liberação ou recusa fica registrada (Serial e histórico no FIWARE).
  *
  * Este arquivo só orquestra: setup() e loop() chamam os módulos.
  *   config.h     constantes          decisao.h   lógica pura (testada no PC)
  *   sensores.h   leitura e validação  atuadores.h relés, LED e buzzer
+ *   cartao.h     leitor NFC           operadores.h  cartões autorizados (lógica pura)
  *   painel.h     LCD 16x2            rede.h      Wi-Fi, NTP e MQTT (só publicação)
  */
 
@@ -30,6 +32,8 @@
 #include "config.h"
 #include "decisao.h"
 #include "sensores.h"
+#include "operadores.h"
+#include "cartao.h"
 #include "atuadores.h"
 #include "painel.h"
 #include "rede.h"
@@ -38,11 +42,16 @@
 static Leitura  leitura;      // última leitura montada
 static Contexto contexto;     // memória da decisão entre ciclos
 static Decisao  decisao;      // última decisão
-static char     payload[160]; // última linha UltraLight pronta para publicar
-static bool     eventoPendente = false;  // bloqueio novo ainda não publicado
-static unsigned long liberadoAteMs = 0;  // até quando o LCD mostra "BLOQUEIO LIBERADO"
-static unsigned long semBloqueioAteMs = 0; // até quando o LCD mostra "Sem bloqueio" (botão sem bloqueio ativo)
-static bool          botaoApertadoAntes = false;  // para avisar no Serial só na hora de apertar
+static char     payload[224]; // última linha UltraLight pronta para publicar
+static char     sufixoEvento[64] = "";   // trecho extra do payload de um cartão ainda não publicado
+static bool     eventoPendente = false;  // bloqueio novo ou cartão ainda não publicado
+static int      totalLiberacoes = 0;     // liberações aceitas desde o boot (atributo nl)
+static int      totalRecusas = 0;        // recusas desde o boot (atributo nr)
+static unsigned long liberadoAteMs = 0;  // até quando o LCD mostra "LIBERADO POR"
+static unsigned long recusadoAteMs = 0;  // até quando o LCD mostra "Cartao recusado"
+static unsigned long semBloqueioAteMs = 0; // até quando o LCD mostra "Sem bloqueio" (cartão sem bloqueio ativo)
+static char          papelLiberou[LCD_COLUNAS + 1] = "";  // papel mostrado em "LIBERADO POR"
+static char          motivoRecusaLcd[16] = "";            // motivo mostrado em "Cartao recusado"
 
 // Imprime uma linha por ciclo de decisão, com os mesmos nomes do payload.
 static void imprimirSerial() {
@@ -59,13 +68,51 @@ static void imprimirSerial() {
     Serial.printf("[%s] *** BLOQUEIO (%s): %s ***\n", ID_DEVICE, nomeMotivo(decisao.motivo),
                   decisao.cortaAquecedor ? "aquecedor cortado, ventoinha ligada"
                                          : "ataque de FRIO: aquecedor liberado, ventoinha desligada");
-  if (decisao.liberou)
-    Serial.printf("[%s] liberacao presencial ACEITA: bloqueio encerrado\n", ID_DEVICE);
-  if (decisao.liberacaoRecusada)
-    Serial.printf("[%s] liberacao RECUSADA: a trava minima ainda tem %lus\n",
-                  ID_DEVICE, decisao.travaRestanteMs / 1000UL);
   if (decisao.mudancaIgnorada)
     Serial.printf("[%s] ordem do controlador IGNORADA (trava ativa)\n", ID_DEVICE);
+}
+
+// Registra uma recusa: log no Serial com hora, contador, LCD e trecho do payload para o FIWARE.
+// `quem` é o código do papel (ou o UID sem ":" se o cartão não é cadastrado).
+static void registrarRecusa(const char* quem, const char* motivo, unsigned long agora) {
+  char hora[24];
+  horaTexto(hora, sizeof(hora));
+  totalRecusas++;
+  Serial.printf("[%s] %s cartao RECUSADO (%s): %s\n", ID_DEVICE, hora, motivo, quem);
+  snprintf(motivoRecusaLcd, sizeof(motivoRecusaLcd), "%s", motivo);
+  recusadoAteMs = agora + LIBERADO_TELA_MS;
+  montarSufixoRecusa(sufixoEvento, sizeof(sufixoEvento), quem, motivo, totalRecusas);
+  eventoPendente = true;
+}
+
+// Trata o cartão lido desde o ciclo anterior, depois da decisão: libera, recusa (e diz por quê)
+// ou avisa que não há bloqueio. Cartão não cadastrado nunca chegou a `avaliar()`.
+static void registrarCartao(bool cartao, int operador, const char* uid, unsigned long agora) {
+  if (!cartao) return;
+  if (operador < 0) {
+    char semSeparador[32];
+    uidSemSeparador(uid, semSeparador);
+    registrarRecusa(semSeparador, "NAO_CADASTRADO", agora);
+    return;
+  }
+  const Operador& op = OPERADORES[operador];
+  const char* motivo = motivoRecusa(decisao);
+  if (liberacaoEfetiva(decisao)) {
+    char hora[24];
+    horaTexto(hora, sizeof(hora));
+    totalLiberacoes++;
+    Serial.printf("[%s] %s bloqueio LIBERADO por %s (%s)\n", ID_DEVICE, hora, op.codigo, op.papel);
+    snprintf(papelLiberou, sizeof(papelLiberou), "%s", op.papel);
+    liberadoAteMs = agora + LIBERADO_TELA_MS;
+    montarSufixoLiberacao(sufixoEvento, sizeof(sufixoEvento), op.codigo, totalLiberacoes);
+    eventoPendente = true;
+  } else if (motivo != nullptr) {
+    registrarRecusa(op.codigo, motivo, agora);
+  } else {
+    // Cartão válido, mas não havia bloqueio a liberar: só avisa (não vira evento no FIWARE).
+    semBloqueioAteMs = agora + LIBERADO_TELA_MS;
+    Serial.printf("[%s] cartao %s lido: nao ha bloqueio ativo\n", ID_DEVICE, op.codigo);
+  }
 }
 
 // Um ciclo de decisão: lê, decide, atua, registra e prepara o payload.
@@ -73,7 +120,12 @@ static void cicloDeDecisao(unsigned long agora) {
   int hora = 0;
   leitura.horaValida = horaAtual(hora);
   leitura.hora = hora;
-  leitura.liberacao = botaoConsumirLiberacao();
+
+  // Cartão apresentado desde o ciclo anterior: só um operador cadastrado pede a liberação.
+  char uidCartao[32] = "";
+  int  operador = -1;
+  const bool cartao = cartaoConsumir(uidCartao, operador);
+  leitura.liberacao = cartao && operador >= 0;
 
   // Só na demonstração: a ventoinha de emergência (da decisão anterior) esfria a temperatura.
   if (leitura.valida)
@@ -84,10 +136,9 @@ static void cicloDeDecisao(unsigned long agora) {
   aplicarReles(decisao.cortaAquecedor, decisao.ligaVentoinha);
   imprimirSerial();
 
-  montarPayload(payload, sizeof(payload), leitura, decisao, contexto.bloqueios);
+  registrarCartao(cartao, operador, uidCartao, agora);   // depois da decisão: já sabe se liberou
+  montarPayload(payload, sizeof(payload), leitura, decisao, contexto.bloqueios, sufixoEvento);
   if (decisao.novoBloqueio) eventoPendente = true;
-  // A decisão só marca `liberou` num ciclo; guarda o prazo para a tela confirmar por mais tempo.
-  if (decisao.liberou) liberadoAteMs = agora + LIBERADO_TELA_MS;
 }
 
 void setup() {
@@ -100,6 +151,7 @@ void setup() {
   iniciarVentoinhaRefrigeracao();
   iniciarSensores();
   iniciarPainel();
+  iniciarLeitorCartao();
   mostrarBoot();
   iniciarContexto(contexto);
   iniciarRede();              // não espera conexão: sem rede o C-Shield funciona igual
@@ -109,7 +161,7 @@ void loop() {
   unsigned long agora = millis();
 
   atualizarRede(agora);       // reconexão a cada 10 s e keepalive do MQTT
-  atualizarBotao(agora);      // debounce e contagem dos 3 s
+  atualizarCartao(agora);     // consulta o leitor NFC a cada CARTAO_LEITURA_MS
 
   if (lerSensores(agora, leitura)) cicloDeDecisao(agora);   // a cada 2 s
 
@@ -124,28 +176,21 @@ void loop() {
     decisao.travaRestanteMs = decorrido >= TRAVA_MS ? 0 : TRAVA_MS - decorrido;
   }
 
-  // Botão apertado sem bloqueio ativo: avisa que não há nada a liberar (no LCD e uma vez no Serial).
-  const bool apertado = botaoProgressoPct() > 0;
-  if (apertado && !decisao.bloqueado) {
-    semBloqueioAteMs = agora + LIBERADO_TELA_MS;
-    if (!botaoApertadoAntes) Serial.printf("[%s] botao apertado: nao ha bloqueio ativo\n", ID_DEVICE);
-  }
-  botaoApertadoAntes = apertado;
-
-  // LCD: boot por um instante, avisos do botão, barra de liberação enquanto segura, senão o estado.
+  // LCD: boot por um instante, resultado do cartão por alguns segundos, senão o estado.
   if (agora < BOOT_TELA_MS) {
     // mantém a tela de boot
   } else if (agora < liberadoAteMs) {
-    mostrarLiberado();        // confirma a liberação por LIBERADO_TELA_MS
+    mostrarLiberadoPor(papelLiberou);       // diz QUEM liberou
+  } else if (agora < recusadoAteMs) {
+    mostrarCartaoRecusado(motivoRecusaLcd); // diz por que não liberou
   } else if (agora < semBloqueioAteMs) {
-    mostrarSemBloqueio();     // o botão foi apertado, mas não há bloqueio para liberar
-  } else if (apertado) {
-    if (decisao.travaRestanteMs > 0) mostrarTravaAtiva(decisao.travaRestanteMs);
-    else                             mostrarLiberacao(botaoProgressoPct());
+    mostrarSemBloqueio();                   // o cartão foi lido, mas não há bloqueio para liberar
   } else {
-    mostrarEstado(decisao, leitura, agora);   // "Estado: ..." e a linha 2 alternando
+    mostrarEstado(decisao, leitura, agora); // "Estado: ..." e a linha 2 alternando
   }
 
   // Só publica depois do primeiro ciclo de decisão (antes disso o payload está vazio).
   if (payload[0] != '\0') publicarSePreciso(payload, decisao.estado, eventoPendente, agora);
+  // Publicado: o trecho do cartão não precisa mais ir junto (o histórico ganha uma linha por evento).
+  if (!eventoPendente) sufixoEvento[0] = '\0';
 }
