@@ -30,6 +30,9 @@ FIWARE_HOST="${FIWARE_HOST:-3.215.3.216}"   # placeholder: confirmar se o IP el�
 IOTA_PORT="${IOTA_PORT:-4041}"              # IoT Agent MQTT (porta de administração)
 ORION_PORT="${ORION_PORT:-1026}"            # Orion Context Broker
 STH_PORT="${STH_PORT:-8666}"                # STH-Comet
+# O Orion notifica o STH-Comet de dentro da rede Docker da EC2, então a URL usa o nome interno
+# do container, não o IP público (a Vinheria descobriu que o IP público não chega lá).
+STH_INTERNAL_URL="${STH_INTERNAL_URL:-http://sth-comet:8666}"
 
 SERVICE="smart"            # header fiware-service
 SERVICE_PATH="/"           # header fiware-servicepath
@@ -163,7 +166,7 @@ assinar() {
     "condition": { "attrs": [ "${condicao}" ] }
   },
   "notification": {
-    "http": { "url": "http://${FIWARE_HOST}:${STH_PORT}/notify" },
+    "http": { "url": "${STH_INTERNAL_URL}/notify" },
     "attrs": [ ${lista} ],
     "attrsFormat": "legacy"
   }
