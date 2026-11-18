@@ -1,0 +1,862 @@
+{
+  "info": {
+    "_postman_id": "3accc87f-b82d-4816-a38e-59da66c74014",
+    "name": "C-Shield - Edge (Nexus Vision)",
+    "description": "Collection do C-Shield (GS 2026.2). Variaveis: url = IP elastico da EC2; device_id/entity_id = o C-Shield a operar. Ordem para colocar um C-Shield no ar: 1) Service group (uma vez), 2) Provisionar device, 3) Subscriptions do STH. O C-Shield so ENVIA dados: nao ha pasta de comandos nem registration. Todo request ao Orion/IoT Agent/STH leva os headers fiware-service e fiware-servicepath; GET nao leva Content-Type. Eventos de cartao NFC: releasedBy/releaseCount (liberacao) e refusedBy/refusedReason/refusalCount (recusa).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. IoT Agent MQTT",
+      "item": [
+        {
+          "name": "Health check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{url}}:4041/iot/about",
+              "protocol": "http",
+              "host": [
+                "{{url}}"
+              ],
+              "port": "4041",
+              "path": [
+                "iot",
+                "about"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Criar service group",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "fiware-service",
+                "value": "smart"
+              },
+              {
+                "key": "fiware-servicepath",
+                "value": "/"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://{{url}}:4041/iot/services",
+              "protocol": "http",
+              "host": [
+                "{{url}}"
+              ],
+              "port": "4041",
+              "path": [
+                "iot",
+                "services"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"services\": [\n    {\n      \"apikey\": \"TEF\",\n      \"cbroker\": \"http://{{url}}:1026\",\n      \"entity_type\": \"Thing\",\n      \"resource\": \"\",\n      \"timestamp\": true\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "timestamp:true preenche TimeInstant a cada medicao (necessario para detectar offline). 409 se ja existir."
+          }
+        },
+        {
+          "name": "Listar service groups",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "fiware-service",
+                "value": "smart"
+              },
+              {
+                "key": "fiware-servicepath",
+                "value": "/"
+              }
+            ],
+            "url": {
+              "raw": "http://{{url}}:4041/iot/services",
+              "protocol": "http",
+              "host": [
+                "{{url}}"
+              ],
+              "port": "4041",
+              "path": [
+                "iot",
+                "services"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Provisionar device (usa device_id/entity_id)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "fiware-service",
+                "value": "smart"
+              },
+              {
+                "key": "fiware-servicepath",
+                "value": "/"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://{{url}}:4041/iot/devices",
+              "protocol": "http",
+              "host": [
+                "{{url}}"
+              ],
+              "port": "4041",
+              "path": [
+                "iot",
+                "devices"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"devices\": [\n    {\n      \"device_id\": \"{{device_id}}\",\n      \"entity_name\": \"{{entity_id}}\",\n      \"entity_type\": \"CShield\",\n      \"protocol\": \"PDI-IoTA-UltraLight\",\n      \"transport\": \"MQTT\",\n      \"attributes\": [\n        {\n          \"object_id\": \"t\",\n          \"name\": \"temperature\",\n          \"type\": \"Float\"\n        },\n        {\n          \"object_id\": \"h\",\n          \"name\": \"humidity\",\n          \"type\": \"Float\"\n        },\n        {\n          \"object_id\": \"l\",\n          \"name\": \"luminosity\",\n          \"type\": \"Integer\"\n        },\n        {\n          \"object_id\": \"sp\",\n          \"name\": \"setpoint\",\n          \"type\": \"Float\"\n        },\n        {\n          \"object_id\": \"dg\",\n          \"name\": \"defrost\",\n          \"type\": \"Integer\"\n        },\n        {\n          \"object_id\": \"st\",\n          \"name\": \"state\",\n          \"type\": \"Text\"\n        },\n        {\n          \"object_id\": \"mt\",\n          \"name\": \"reason\",\n          \"type\": \"Text\"\n        },\n        {\n          \"object_id\": \"bq\",\n          \"name\": \"blocks\",\n          \"type\": \"Integer\"\n        },\n        {\n          \"object_id\": \"ex\",\n          \"name\": \"exposure\",\n          \"type\": \"Float\"\n        },\n        {\n          \"object_id\": \"lb\",\n          \"name\": \"releasedBy\",\n          \"type\": \"Text\"\n        },\n        {\n          \"object_id\": \"nl\",\n          \"name\": \"releaseCount\",\n          \"type\": \"Integer\"\n        },\n        {\n          \"object_id\": \"rj\",\n          \"name\": \"refusedBy\",\n          \"type\": \"Text\"\n        },\n        {\n          \"object_id\": \"rm\",\n          \"name\": \"refusedReason\",\n          \"type\": \"Text\"\n        },\n        {\n          \"object_id\": \"nr\",\n          \"name\": \"refusalCount\",\n          \"type\": \"Integer\"\n        }\n      ]\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Espera 201. So atributos: o C-Shield envia dados e NAO recebe comandos, entao nao ha 'commands' nem registration. lb/nl e rj/rm/nr so aparecem no payload quando um cartao NFC e lido (liberacao ou recusa). Se o device ja existir (409), apague-o antes (request 'Apagar device') para a lista nova de atributos valer."
+          }
+        },
+        {
+          "name": "Listar devices",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "fiware-service",
+                "value": "smart"
+              },
+              {
+                "key": "fiware-servicepath",
+                "value": "/"
+              }
+            ],
+            "url": {
+              "raw": "http://{{url}}:4041/iot/devices",
+              "protocol": "http",
+              "host": [
+                "{{url}}"
+              ],
+              "port": "4041",
+              "path": [
+                "iot",
+                "devices"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver device",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "fiware-service",
+                "value": "smart"
+              },
+              {
+                "key": "fiware-servicepath",
+                "value": "/"
+              }
+            ],
+            "url": {
+              "raw": "http://{{url}}:4041/iot/devices/{{device_id}}",
+              "protocol": "http",
+              "host": [
+                "{{url}}"
+              ],
+              "port": "4041",
+              "path": [
+                "iot",
+                "devices",
+                "{{device_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Apagar device",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "fiware-service",
+                "value": "smart"
+              },
+              {
+                "key": "fiware-servicepath",
+                "value": "/"
+              }
+            ],
+            "url": {
+              "raw": "http://{{url}}:4041/iot/devices/{{device_id}}",
+              "protocol": "http",
+              "host": [
+                "{{url}}"
+              ],
+              "port": "4041",
+              "path": [
+                "iot",
+                "devices",
+                "{{device_id}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Orion Context Broker",
+      "item": [
+        {
+          "name": "Versao",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{url}}:1026/version",
+              "protocol": "http",
+              "host": [
+                "{{url}}"
+              ],
+              "port": "1026",
+              "path": [
+                "version"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar entidades CShield",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "fiware-service",
+                "value": "smart"
+              },
+              {
+                "key": "fiware-servicepath",
+                "value": "/"
+              }
+            ],
+            "url": {
+              "raw": "http://{{url}}:1026/v2/entities?type=CShield&options=keyValues",
+              "protocol": "http",
+              "host": [
+                "{{url}}"
+              ],
+              "port": "1026",
+              "path": [
+                "v2",
+                "entities"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "CShield"
+                },
+                {
+                  "key": "options",
+                  "value": "keyValues"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver entidade",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "fiware-service",
+                "value": "smart"
+              },
+              {
+                "key": "fiware-servicepath",
+                "value": "/"
+              }
+            ],
+            "url": {
+              "raw": "http://{{url}}:1026/v2/entities/{{entity_id}}?options=keyValues",
+              "protocol": "http",
+              "host": [
+                "{{url}}"
+              ],
+              "port": "1026",
+              "path": [
+                "v2",
+                "entities",
+                "{{entity_id}}"
+              ],
+              "query": [
+                {
+                  "key": "options",
+                  "value": "keyValues"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Apagar entidade",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "fiware-service",
+                "value": "smart"
+              },
+              {
+                "key": "fiware-servicepath",
+                "value": "/"
+              }
+            ],
+            "url": {
+              "raw": "http://{{url}}:1026/v2/entities/{{entity_id}}",
+              "protocol": "http",
+              "host": [
+                "{{url}}"
+              ],
+              "port": "1026",
+              "path": [
+                "v2",
+                "entities",
+                "{{entity_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar registrations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "fiware-service",
+                "value": "smart"
+              },
+              {
+                "key": "fiware-servicepath",
+                "value": "/"
+              }
+            ],
+            "url": {
+              "raw": "http://{{url}}:1026/v2/registrations",
+              "protocol": "http",
+              "host": [
+                "{{url}}"
+              ],
+              "port": "1026",
+              "path": [
+                "v2",
+                "registrations"
+              ]
+            },
+            "description": "Deve haver exatamente uma por entidade (criada pelo IoT Agent). Duplicatas causam 404 nos comandos."
+          }
+        },
+        {
+          "name": "Apagar registration",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "fiware-service",
+                "value": "smart"
+              },
+              {
+                "key": "fiware-servicepath",
+                "value": "/"
+              }
+            ],
+            "url": {
+              "raw": "http://{{url}}:1026/v2/registrations/{{registration_id}}",
+              "protocol": "http",
+              "host": [
+                "{{url}}"
+              ],
+              "port": "1026",
+              "path": [
+                "v2",
+                "registrations",
+                "{{registration_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar subscriptions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "fiware-service",
+                "value": "smart"
+              },
+              {
+                "key": "fiware-servicepath",
+                "value": "/"
+              }
+            ],
+            "url": {
+              "raw": "http://{{url}}:1026/v2/subscriptions",
+              "protocol": "http",
+              "host": [
+                "{{url}}"
+              ],
+              "port": "1026",
+              "path": [
+                "v2",
+                "subscriptions"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Apagar subscription",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "fiware-service",
+                "value": "smart"
+              },
+              {
+                "key": "fiware-servicepath",
+                "value": "/"
+              }
+            ],
+            "url": {
+              "raw": "http://{{url}}:1026/v2/subscriptions/{{subscription_id}}",
+              "protocol": "http",
+              "host": [
+                "{{url}}"
+              ],
+              "port": "1026",
+              "path": [
+                "v2",
+                "subscriptions",
+                "{{subscription_id}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. STH-Comet",
+      "item": [
+        {
+          "name": "Health check",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "fiware-service",
+                "value": "smart"
+              },
+              {
+                "key": "fiware-servicepath",
+                "value": "/"
+              }
+            ],
+            "url": {
+              "raw": "http://{{url}}:8666/version",
+              "protocol": "http",
+              "host": [
+                "{{url}}"
+              ],
+              "port": "8666",
+              "path": [
+                "version"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Subscribe temperature (STH)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "fiware-service",
+                "value": "smart"
+              },
+              {
+                "key": "fiware-servicepath",
+                "value": "/"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://{{url}}:1026/v2/subscriptions",
+              "protocol": "http",
+              "host": [
+                "{{url}}"
+              ],
+              "port": "1026",
+              "path": [
+                "v2",
+                "subscriptions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"C-Shield STH temperature\",\n  \"subject\": {\n    \"entities\": [\n      {\n        \"id\": \"{{entity_id}}\",\n        \"type\": \"CShield\"\n      }\n    ],\n    \"condition\": {\n      \"attrs\": [\n        \"temperature\"\n      ]\n    }\n  },\n  \"notification\": {\n    \"http\": {\n      \"url\": \"{{sth_internal}}/notify\"\n    },\n    \"attrs\": [\n      \"temperature\"\n    ],\n    \"attrsFormat\": \"legacy\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "A URL de notificacao usa o nome interno do container (sth-comet), nao o IP publico."
+          }
+        },
+        {
+          "name": "Subscribe state (STH)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "fiware-service",
+                "value": "smart"
+              },
+              {
+                "key": "fiware-servicepath",
+                "value": "/"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://{{url}}:1026/v2/subscriptions",
+              "protocol": "http",
+              "host": [
+                "{{url}}"
+              ],
+              "port": "1026",
+              "path": [
+                "v2",
+                "subscriptions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"C-Shield STH state\",\n  \"subject\": {\n    \"entities\": [\n      {\n        \"id\": \"{{entity_id}}\",\n        \"type\": \"CShield\"\n      }\n    ],\n    \"condition\": {\n      \"attrs\": [\n        \"state\"\n      ]\n    }\n  },\n  \"notification\": {\n    \"http\": {\n      \"url\": \"{{sth_internal}}/notify\"\n    },\n    \"attrs\": [\n      \"state\"\n    ],\n    \"attrsFormat\": \"legacy\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Igual a anterior, para o estado."
+          }
+        },
+        {
+          "name": "Subscribe evento liberacao (STH)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "fiware-service",
+                "value": "smart"
+              },
+              {
+                "key": "fiware-servicepath",
+                "value": "/"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://{{url}}:1026/v2/subscriptions",
+              "protocol": "http",
+              "host": [
+                "{{url}}"
+              ],
+              "port": "1026",
+              "path": [
+                "v2",
+                "subscriptions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"C-Shield STH evento liberacao\",\n  \"subject\": {\n    \"entities\": [\n      {\n        \"id\": \"{{entity_id}}\",\n        \"type\": \"CShield\"\n      }\n    ],\n    \"condition\": {\n      \"attrs\": [\n        \"releaseCount\"\n      ]\n    }\n  },\n  \"notification\": {\n    \"http\": {\n      \"url\": \"{{sth_internal}}/notify\"\n    },\n    \"attrs\": [\n      \"releasedBy\",\n      \"releaseCount\"\n    ],\n    \"attrsFormat\": \"legacy\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Dispara pelo contador, que sempre muda: assim o mesmo papel liberando duas vezes seguidas gera duas linhas no historico."
+          }
+        },
+        {
+          "name": "Subscribe evento recusa (STH)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "fiware-service",
+                "value": "smart"
+              },
+              {
+                "key": "fiware-servicepath",
+                "value": "/"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://{{url}}:1026/v2/subscriptions",
+              "protocol": "http",
+              "host": [
+                "{{url}}"
+              ],
+              "port": "1026",
+              "path": [
+                "v2",
+                "subscriptions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"C-Shield STH evento recusa\",\n  \"subject\": {\n    \"entities\": [\n      {\n        \"id\": \"{{entity_id}}\",\n        \"type\": \"CShield\"\n      }\n    ],\n    \"condition\": {\n      \"attrs\": [\n        \"refusalCount\"\n      ]\n    }\n  },\n  \"notification\": {\n    \"http\": {\n      \"url\": \"{{sth_internal}}/notify\"\n    },\n    \"attrs\": [\n      \"refusedBy\",\n      \"refusedReason\",\n      \"refusalCount\"\n    ],\n    \"attrsFormat\": \"legacy\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Igual ao anterior, para cartoes recusados."
+          }
+        },
+        {
+          "name": "Historico temperature (lastN)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "fiware-service",
+                "value": "smart"
+              },
+              {
+                "key": "fiware-servicepath",
+                "value": "/"
+              }
+            ],
+            "url": {
+              "raw": "http://{{url}}:8666/STH/v1/contextEntities/type/CShield/id/{{entity_id}}/attributes/temperature?lastN=30",
+              "protocol": "http",
+              "host": [
+                "{{url}}"
+              ],
+              "port": "8666",
+              "path": [
+                "STH",
+                "v1",
+                "contextEntities",
+                "type",
+                "CShield",
+                "id",
+                "{{entity_id}}",
+                "attributes",
+                "temperature"
+              ],
+              "query": [
+                {
+                  "key": "lastN",
+                  "value": "30"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Historico state (lastN)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "fiware-service",
+                "value": "smart"
+              },
+              {
+                "key": "fiware-servicepath",
+                "value": "/"
+              }
+            ],
+            "url": {
+              "raw": "http://{{url}}:8666/STH/v1/contextEntities/type/CShield/id/{{entity_id}}/attributes/state?lastN=30",
+              "protocol": "http",
+              "host": [
+                "{{url}}"
+              ],
+              "port": "8666",
+              "path": [
+                "STH",
+                "v1",
+                "contextEntities",
+                "type",
+                "CShield",
+                "id",
+                "{{entity_id}}",
+                "attributes",
+                "state"
+              ],
+              "query": [
+                {
+                  "key": "lastN",
+                  "value": "30"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Historico releasedBy (lastN)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "fiware-service",
+                "value": "smart"
+              },
+              {
+                "key": "fiware-servicepath",
+                "value": "/"
+              }
+            ],
+            "url": {
+              "raw": "http://{{url}}:8666/STH/v1/contextEntities/type/CShield/id/{{entity_id}}/attributes/releasedBy?lastN=30",
+              "protocol": "http",
+              "host": [
+                "{{url}}"
+              ],
+              "port": "8666",
+              "path": [
+                "STH",
+                "v1",
+                "contextEntities",
+                "type",
+                "CShield",
+                "id",
+                "{{entity_id}}",
+                "attributes",
+                "releasedBy"
+              ],
+              "query": [
+                {
+                  "key": "lastN",
+                  "value": "30"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Historico refusedBy (lastN)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "fiware-service",
+                "value": "smart"
+              },
+              {
+                "key": "fiware-servicepath",
+                "value": "/"
+              }
+            ],
+            "url": {
+              "raw": "http://{{url}}:8666/STH/v1/contextEntities/type/CShield/id/{{entity_id}}/attributes/refusedBy?lastN=30",
+              "protocol": "http",
+              "host": [
+                "{{url}}"
+              ],
+              "port": "8666",
+              "path": [
+                "STH",
+                "v1",
+                "contextEntities",
+                "type",
+                "CShield",
+                "id",
+                "{{entity_id}}",
+                "attributes",
+                "refusedBy"
+              ],
+              "query": [
+                {
+                  "key": "lastN",
+                  "value": "30"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "url",
+      "value": "3.215.3.216"
+    },
+    {
+      "key": "device_id",
+      "value": "cshield001"
+    },
+    {
+      "key": "entity_id",
+      "value": "urn:ngsi-ld:CShield:001"
+    },
+    {
+      "key": "sth_internal",
+      "value": "http://sth-comet:8666"
+    },
+    {
+      "key": "registration_id",
+      "value": ""
+    },
+    {
+      "key": "subscription_id",
+      "value": ""
+    }
+  ]
+}
