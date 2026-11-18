@@ -23,10 +23,9 @@
  *
  * Telas especiais:
  *   Boot        NOME_PRODUTO / Iniciando...
- *   Liberando   "Liberando..." / barra de progresso de 16 blocos (botão segurado)
- *   Trava       "Trava ativa" / "Aguarde 45s" (botão segurado antes de a trava mínima acabar)
- *   Liberado    "Estado: Liberado" / "Controle normal" (por LIBERADO_TELA_MS após liberar)
- *   Sem bloqueio "Sem bloqueio" / "Nada a liberar" (botão apertado sem bloqueio ativo)
+ *   Liberado    "LIBERADO POR" / papel do cartão (por LIBERADO_TELA_MS após liberar)
+ *   Recusado    "Cartao recusado" / motivo (trava, ordem, temperatura ou cartão desconhecido)
+ *   Sem bloqueio "Sem bloqueio" / "Nada a liberar" (cartão lido sem bloqueio ativo)
  */
 #ifndef PAINEL_H
 #define PAINEL_H
@@ -119,7 +118,7 @@ static void mostrarEstado(const Decisao& d, const Leitura& l, unsigned long agor
       unsigned long s = d.travaRestanteMs / 1000UL;
       if (s >= 100)    snprintf(msg[n++], sizeof(msg[0]), "Liberacao em %lum", s / 60UL);
       else if (s > 0)  snprintf(msg[n++], sizeof(msg[0]), "Liberacao em %lus", s);
-      else             snprintf(msg[n++], sizeof(msg[0]), "Segure botao %lus", LIBERACAO_MS / 1000UL);
+      else             snprintf(msg[n++], sizeof(msg[0]), "Passe o cartao");
       break;
     }
     case ST_CRITICO:
@@ -138,36 +137,29 @@ static void mostrarEstado(const Decisao& d, const Leitura& l, unsigned long agor
   escreverLinha(1, msg[(agoraMs / ALTERNA_TELA_MS) % (unsigned long)n]);
 }
 
-// Botão segurado durante a trava mínima: avisa por que ainda não vai liberar.
-static void mostrarTravaAtiva(unsigned long travaRestanteMs) {
-  char l2[24];
-  unsigned long s = travaRestanteMs / 1000UL;
-  if (s >= 100) snprintf(l2, sizeof(l2), "Aguarde %lum", s / 60UL);
-  else          snprintf(l2, sizeof(l2), "Aguarde %lus", s);
-  escreverLinha(0, "Trava ativa");
-  escreverLinha(1, l2);
+// Confirmação mostrada logo depois de a liberação presencial ser aceita: diz QUEM liberou
+// (o papel do cartão, de OPERADORES em config.h).
+static void mostrarLiberadoPor(const char* papel) {
+  escreverLinha(0, "LIBERADO POR");
+  escreverLinha(1, papel);
 }
 
-// Confirmação mostrada logo depois de a liberação presencial ser aceita.
-static void mostrarLiberado() {
-  escreverLinha(0, "Estado: Liberado");
-  escreverLinha(1, "Controle normal");
+// Cartão lido, mas a liberação não aconteceu. `motivo` é o texto de motivoRecusa() ou
+// "NAO_CADASTRADO"; aqui vira uma mensagem curta de até 16 colunas.
+static void mostrarCartaoRecusado(const char* motivo) {
+  const char* texto = "Recusado";
+  if (strcmp(motivo, "TRAVA") == 0)               texto = "Trava ativa";
+  else if (strcmp(motivo, "ORDEM") == 0)          texto = "Ordem invalida";
+  else if (strcmp(motivo, "TEMPERATURA") == 0)    texto = "Temp. fora faixa";
+  else if (strcmp(motivo, "NAO_CADASTRADO") == 0) texto = "Nao cadastrado";
+  escreverLinha(0, "Cartao recusado");
+  escreverLinha(1, texto);
 }
 
-// Botão apertado sem nenhum bloqueio ativo: não há nada a liberar.
+// Cartão lido sem nenhum bloqueio ativo: não há nada a liberar.
 static void mostrarSemBloqueio() {
   escreverLinha(0, "Sem bloqueio");
   escreverLinha(1, "Nada a liberar");
-}
-
-// Tela de liberação: título e barra de 16 blocos que enche em LIBERACAO_MS.
-static void mostrarLiberacao(int progressoPct) {
-  char barra[LCD_COLUNAS + 1];
-  int cheios = (progressoPct * LCD_COLUNAS) / 100;
-  for (int i = 0; i < LCD_COLUNAS; i++) barra[i] = (i < cheios) ? (char)255 : ' ';
-  barra[LCD_COLUNAS] = '\0';
-  escreverLinha(0, "Liberando...");
-  escreverLinha(1, barra);
 }
 
 #endif
