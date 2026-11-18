@@ -103,8 +103,6 @@ Projeto da **Global Solution 2026.2 "CitizenTech"** de Edge Computing & Computer
 | 🛡️ Simulação no Wokwi | [wokwi.com/projects/480328417992209409](https://wokwi.com/projects/480328417992209409) |
 | 💻 Repositório do Edge | [github.com/NexusDev-Team/C-Shield-Edge](https://github.com/NexusDev-Team/C-Shield-Edge) |
 | 🧪 Tabela de testes dos estados | [`docs/edge-testes-estados.md`](docs/edge-testes-estados.md) |
-| 🎬 Roteiro do vídeo | [`docs/edge-roteiro-video.md`](docs/edge-roteiro-video.md) |
-| 🔌 Contrato com o site | [`docs/edge-contrato-web.md`](docs/edge-contrato-web.md) |
 
 ### O problema
 
@@ -355,8 +353,6 @@ C-Shield-Edge/
 ├── README.md
 ├── docs/
 │   ├── edge-testes-estados.md    tabela de testes dos estados e teste ponta a ponta
-│   ├── edge-roteiro-video.md     roteiro do vídeo (até 7 min)
-│   ├── edge-contrato-web.md      contrato com o site c-shield-web
 │   └── img/                      logo
 └── edge/
     ├── cshield/                  firmware (.ino, .h), diagram.json e libraries.txt do Wokwi
@@ -376,8 +372,6 @@ dashboard/
 | Documento | Conteúdo |
 | --- | --- |
 | [`docs/edge-testes-estados.md`](docs/edge-testes-estados.md) | O que mexer no Wokwi e o que deve aparecer em cada estado; teste ponta a ponta com o FIWARE (executado em 11/11) |
-| [`docs/edge-roteiro-video.md`](docs/edge-roteiro-video.md) | Roteiro do vídeo, na ordem da rubrica, com os tempos |
-| [`docs/edge-contrato-web.md`](docs/edge-contrato-web.md) | O que o Edge publica, como ler o Orion e as regras que o emulador do site deve reproduzir |
 
 <p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
 

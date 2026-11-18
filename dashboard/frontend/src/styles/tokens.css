@@ -10,7 +10,7 @@
  */
 
 /*
- * Tokens do Design System v1.0 "Cyber-criogênico" (docs/specs/web/design.md §0, decisão de 12/11).
+ * Tokens do Design System v1.0 "Cyber-criogênico", o mesmo do site do projeto.
  * Os NOMES dos tokens vêm das versões anteriores e foram mantidos para não mexer em todos os
  * componentes; só os valores mudaram. Tailwind v4: o @theme gera as utilidades
  * (bg-noite-950, text-gelo-50...).
