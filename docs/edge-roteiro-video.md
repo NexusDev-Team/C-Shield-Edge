@@ -37,7 +37,7 @@ Projeto C-Shield · Nexus Vision · GS 2026.2 "CitizenTech". Vídeo no YouTube d
 | DHT22 (GPIO 4) | "Mede temperatura e umidade próprias, independentes do controlador, que é justamente o que pode mentir." |
 | LDR (GPIO 34) | "Detecta porta aberta pela luz. Porta aberta justifica o calor e muda a resposta." |
 | Chave "Controlador" NORMAL/ATAQUE (GPIO 32) | "No simulador, representa o que o controlador comercial está mandando. Em ATAQUE, ele manda um setpoint perigoso. É o nosso 'ataque'." |
-| Botão (GPIO 19) | "A única forma de liberar um bloqueio, e só presencial: segurar por 3 segundos." |
+| Leitor NFC MFRC522 (GPIO 14, 19, 13, 15 e 17) | "A única forma de liberar um bloqueio, e só presencial: um cartão cadastrado, encostado no aparelho. Cada cartão é um papel, e quem liberou fica registrado no log e no histórico do FIWARE." |
 | Relé 1, contato NF (GPIO 23) | "Fica entre o controlador e o aquecedor. Energizado, abre o circuito e corta o aquecimento. Desenergizado, fica fechado: se o C-Shield falhar, o equipamento funciona como antes." |
 | Relé 2, contato NA (GPIO 33) | "Liga a ventoinha de emergência no bloqueio." |
 | LEDs laranja e azul | "No simulador mostram o aquecedor cortado e a ventoinha de emergência ligada." |
@@ -79,10 +79,10 @@ Projeto C-Shield · Nexus Vision · GS 2026.2 "CitizenTech". Vídeo no YouTube d
 | 4:15 a 4:30 | Ponto de partida | NORMAL: LED verde, LCD `Estado: Ideal` / `Temp: 5.0°C`, LED laranja (aquecedor) aceso, verde (refrigeração) aceso, azul (emergência) apagado. |
 | 4:30 a 4:45 | Subir o LDR | ATENCAO por porta aberta: LED amarelo, LCD `Estado: Atencao` / `Porta aberta`, bipe curto. Fechar a porta. |
 | 4:45 a 5:15 | **Mover a chave "Controlador" para ATAQUE** | O ataque. BLOQUEIO imediato: LCD `Estado: Bloqueio` / `Alt. de Setpoint`, **LED RGB azul fixo**, apito por 5 s, **LED verde apaga** (o atacante desliga a refrigeração; durante o bloqueio a chave só consegue ligá-la de novo), **LED laranja apaga** (aquecedor cortado), **LED azul acende** (ventoinha de emergência). Serial mostra `BLOQUEIO (SETPOINT_INVALIDO)` e o valor recebido. "Sem esperar a temperatura subir." |
-| 5:15 a 5:30 | Mexer na chave "Controlador" de novo durante a trava | Serial: `ordem do controlador IGNORADA (trava ativa)`. |
+| 5:15 a 5:30 | Mexer na chave "Controlador" de novo durante a trava; em seguida encostar o cartão **azul** (Tap) | Serial: `ordem do controlador IGNORADA (trava ativa)`. Com o cartão: LCD `Cartao recusado` / `Trava ativa` por 3 s e Serial `cartao RECUSADO (TRAVA): RT01`. "Nem quem tem cartão libera antes da trava." |
 | 5:30 a 5:45 | Subir o DHT22 além de 9 °C | CRITICO: buzzer contínuo, LCD `Estado: Critico` / `Exposicao ...` (o LED fica azul porque o bloqueio continua ativo). Ao voltar a 5 °C o apito para e o bloqueio continua. Voltar o DHT22 a 5 °C. |
 | 5:45 a 6:00 | Desconectar o DHT22 | FALHA_SENSOR: LED amarelo piscando, LCD `Estado: Falha` / `Sensor sem dado`, bipe duplo. Reconectar. |
-| 6:00 a 6:15 | Trazer o setpoint de volta, esperar `trava=0s`, **segurar o botão por 3 s** | LCD `Liberando...` com a barra enchendo, depois `Estado: Liberado` / `Controle normal` por 3 s; volta a NORMAL e o LED fica verde. "Só presencial." |
+| 6:00 a 6:15 | Trazer o setpoint de volta, esperar `trava=0s`, encostar o cartão **vermelho** e depois o **azul** | Vermelho: LCD `Cartao recusado` / `Nao cadastrado`, Serial `cartao RECUSADO (NAO_CADASTRADO)`. Azul: LCD `LIBERADO POR` / `Resp. tecnico` por 3 s, Serial `bloqueio LIBERADO por RT01 (Resp. tecnico)`; volta a NORMAL e o LED fica verde. "Só presencial, e fica registrado quem liberou." |
 
 Dica de gravação: se a trava de 60 s atrapalhar o ritmo, faça a parte do CRITICO e da falha de sensor enquanto ela corre e libere no final.
 

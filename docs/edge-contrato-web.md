@@ -35,9 +35,16 @@ Exemplo de resposta (Wokwi rodando, chave em ATAQUE):
 | `defrost` | 0 ou 1 | Degelo comandado pelo controlador |
 | `blocks` | inteiro | Quantos bloqueios aconteceram desde que o dispositivo ligou (não zera ao liberar) |
 | `exposure` | número (°C·min) | Exposição térmica acumulada acima do máximo da faixa |
+| `releasedBy` | texto | Código do papel do cartão NFC que liberou o último bloqueio (`RT01`, `ENF01`, `MAN01`, `SUP01`, `GER01`). Só existe depois da primeira liberação |
+| `releaseCount` | inteiro | Liberações aceitas desde que o dispositivo ligou. Muda a cada liberação |
+| `refusedBy` | texto | Quem tentou liberar e foi recusado: código do papel, ou o UID sem `:` se o cartão não é cadastrado |
+| `refusedReason` | texto | `TRAVA`, `ORDEM`, `TEMPERATURA` ou `NAO_CADASTRADO` |
+| `refusalCount` | inteiro | Recusas desde que o dispositivo ligou. Muda a cada recusa |
 | `TimeInstant` | data ISO | Quando o dado chegou. Se tiver mais de uns 15 s, o dispositivo está desligado: mostre "offline" |
 
-Atualização: o dispositivo publica a cada 5 s e **na hora** em toda mudança de estado. Consulte o Orion a cada 2 ou 3 s.
+Atualização: o dispositivo publica a cada 5 s e **na hora** em toda mudança de estado e em todo cartão lido. Consulte o Orion a cada 2 ou 3 s.
+
+**Eventos de cartão.** `releasedBy`/`releaseCount` e `refusedBy`/`refusedReason`/`refusalCount` só vão no payload **no momento do evento**; no Orion ficam com o último valor. Para o **histórico** (quem liberou e quando), consulte o STH-Comet, que grava uma linha por evento: `GET /STH/v1/contextEntities/type/CShield/id/urn:ngsi-ld:CShield:001/attributes/releasedBy?lastN=20` (e `refusedBy`). Os contadores sempre mudam, então duas liberações seguidas do mesmo papel geram duas linhas.
 
 ## 2. Como o site lê o Orion
 
@@ -59,7 +66,7 @@ Atualização: o dispositivo publica a cada 5 s e **na hora** em toda mudança d
 
 ## 3. O que o emulador precisa reproduzir
 
-Entradas: temperatura, umidade, luz (porta), setpoint, degelo, hora e o botão de liberação (segurar 3 s). Saídas: estado, motivo, relés, LED, buzzer e as telas do LCD.
+Entradas: temperatura, umidade, luz (porta), setpoint, degelo, hora e o cartão de liberação (código do papel, ou desconhecido). Saídas: estado, motivo, relés, LED, buzzer e as telas do LCD.
 
 **Estados, do mais alto para o mais baixo:** `CRITICO` > `BLOQUEIO` > `FALHA_SENSOR` > `ATENCAO` > `NORMAL`. O bloqueio é uma condição persistente, separada do estado mostrado.
 
