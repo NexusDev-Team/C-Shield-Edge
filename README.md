@@ -61,6 +61,7 @@
       </ul>
     </li>
     <li><a href="#como-rodar">Como rodar</a></li>
+    <li><a href="#dashboard-central">Dashboard (central)</a></li>
     <li><a href="#estrutura-do-repositório">Estrutura do repositório</a></li>
     <li><a href="#documentos">Documentos</a></li>
     <li><a href="#roadmap">Roadmap</a></li>
@@ -286,6 +287,58 @@ curl -s "http://<ip>:1026/v2/entities/urn:ngsi-ld:CShield:001?options=keyValues"
 
 ---
 
+<!-- DASHBOARD -->
+## Dashboard (central)
+
+A terceira camada: uma página que **lê** o FIWARE e mostra a frota. Fica em `dashboard/` e tem a estética do site do projeto. Nada ali manda ordens ao C-Shield; o próprio cadastro só provisiona o device.
+
+| Tela | O que mostra |
+| --- | --- |
+| **Mapa da frota** (`/`) | Os cinco pontos da cidade, com a temperatura e o estado reais de cada C-Shield cadastrado, a Central (FIWARE) e uma linha de dados só no sentido do aparelho para a central |
+| **Monitoramento** (`/dispositivo/<id>`) | Temperatura atual, histórico térmico (STH-Comet), umidade, porta, bloqueios, exposição e o **histórico de liberações**: quem encostou o cartão, quando e o que aconteceu |
+| **C-Shields** (`/dispositivos`) | Cadastro e remoção. Cadastrar provisiona o device, a entidade e as subscriptions no FIWARE |
+| **Avançado** (`/avancado`) | IP da EC2 e saúde do Orion, do IoT Agent e do STH-Comet |
+
+Como a Vinheria, o navegador nunca fala com o FIWARE: ele chama `/api/...` num backend FastAPI (`dashboard/backend`, copiado da Vinheria e adaptado), e só o backend fala com a EC2.
+
+**Rodar no notebook**
+
+```bash
+# backend (porta 8000)
+cd dashboard/backend
+python -m venv .venv && .venv/Scripts/python -m pip install -r requirements.txt
+cp .env.example .env          # preencha FIWARE_HOST com o IP da EC2
+.venv/Scripts/python -m uvicorn app.main:app --port 8000
+
+# frontend (porta 5173; o Vite encaminha /api para o backend)
+cd dashboard/frontend
+npm install
+npm run dev
+```
+
+Na tela **C-Shields**, cadastre `cshield001` num ponto do mapa. Com o Wokwi rodando, o mapa e o monitoramento passam a mostrar os dados ao vivo, e cada cartão encostado aparece no histórico de liberações.
+
+**Testes**
+
+```bash
+cd dashboard/backend && .venv/Scripts/python -m pytest
+cd dashboard/frontend && npx vitest run
+```
+
+**Publicar (Vercel + túnel)**
+
+O backend roda no notebook e a Cloudflare o expõe, como na Vinheria. O Vercel serve só o site estático e reescreve `/api` para o túnel.
+
+1. Com o backend no ar: `cloudflared tunnel --url http://localhost:8000` e copie o endereço `https://....trycloudflare.com`.
+2. Em `dashboard/frontend/vercel.json`, troque `SUBSTITUA-PELO-TUNEL.trycloudflare.com` por esse endereço.
+3. No Vercel, crie um projeto novo com **Root Directory** `dashboard/frontend` e faça o deploy.
+
+O endereço do túnel muda a cada reinício do `cloudflared`; nesse caso repita os passos 2 e 3. Pelo túnel o backend **só lê**: cadastro, remoção e troca do IP da EC2 só funcionam no notebook (`localhost`), então o site público não deixa ninguém de fora alterar a frota. A API não tem autenticação.
+
+<p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
+
+---
+
 <!-- ESTRUTURA -->
 ## Estrutura do repositório
 
@@ -299,8 +352,12 @@ C-Shield-Edge/
 │   └── img/                      logo
 └── edge/
     ├── cshield/                  firmware (.ino, .h), diagram.json e libraries.txt do Wokwi
-    ├── test/                     testes da lógica de decisão
-    └── fiware/                   provisionar.sh (device sem comandos + subscriptions)
+    ├── test/                     testes da lógica de decisão e dos cartões
+    └── fiware/                   provisionar.sh (device sem comandos + subscriptions) e collection do Postman
+
+dashboard/
+├── backend/                      API FastAPI de leitura (cliente FIWARE copiado da Vinheria)
+└── frontend/                     React + Vite, com a estética do site
 ```
 
 ---
