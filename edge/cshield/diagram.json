@@ -75,12 +75,11 @@
       "attrs": { "label": "Controlador: esquerda NORMAL / direita ATAQUE" }
     },
     {
-      "type": "wokwi-pushbutton",
-      "id": "btn1",
-      "top": -246.4,
-      "left": 310.4,
-      "rotate": 270,
-      "attrs": { "color": "green", "label": "Liberar (3 s)" }
+      "type": "board-mfrc522",
+      "id": "rfid1",
+      "top": -290,
+      "left": 330,
+      "attrs": { "label": "Aproxime o cartao (Tap)" }
     },
     {
       "type": "wokwi-relay-module",
@@ -163,8 +162,13 @@
     [ "r_vr:1", "esp:RX2", "limegreen", [ "v0" ] ],
     [ "r_vr:2", "led_vr:A", "green", [ "v0" ] ],
     [ "led_vr:C", "bb1:tn.24", "black", [ "v0" ] ],
-    [ "btn1:1.l", "esp:D19", "magenta", [ "v0" ] ],
-    [ "btn1:2.l", "bb1:tn.16", "gray", [ "v0" ] ],
+    [ "rfid1:3.3V", "esp:3V3", "red", [ "v0" ] ],
+    [ "rfid1:GND", "esp:GND.1", "black", [ "v0" ] ],
+    [ "rfid1:SCK", "esp:D14", "orange", [ "v0" ] ],
+    [ "rfid1:MISO", "esp:D19", "magenta", [ "v0" ] ],
+    [ "rfid1:MOSI", "esp:D13", "cyan", [ "v0" ] ],
+    [ "rfid1:SDA", "esp:D15", "gold", [ "v0" ] ],
+    [ "rfid1:RST", "esp:TX2", "white", [ "v0" ] ],
     [ "esp:D25", "r_r:1", "green", [ "v0" ] ],
     [ "r_r:2", "rgb1:R", "green", [ "v0" ] ],
     [ "esp:D26", "r_g:1", "green", [ "v0" ] ],
