@@ -96,6 +96,16 @@ static bool horaAtual(int& hora) {
   return true;
 }
 
+// Data e hora local por extenso ("2026-11-18 16:40:12") para o log do Serial. Sem NTP
+// sincronizado escreve "sem-hora", e o log continua útil mesmo offline.
+static void horaTexto(char* buf, size_t n) {
+  time_t agora = time(nullptr);
+  if (agora < 1700000000L) { snprintf(buf, n, "sem-hora"); return; }
+  struct tm info;
+  localtime_r(&agora, &info);
+  strftime(buf, n, "%Y-%m-%d %H:%M:%S", &info);
+}
+
 // Monta o payload UltraLight:
 //   t|4.8|h|81|l|12|sp|5.0|dg|0|st|NORMAL|mt|-|bq|0|ex|0
 // Com o sensor inválido, t e h vão como -999 (não publica valor velho como se fosse leitura).
