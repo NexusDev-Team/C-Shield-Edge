@@ -4,7 +4,7 @@
 
 <div align="center">
 
-  <img src="docs/img/logo.svg" alt="Logo C-Shield" width="96" height="96">
+  <img src="docs/img/logo-c-shield.png" alt="Logo C-Shield: escudo com um floco de neve" width="120">
 
   <h1>🛡️ C-Shield ⚡</h1>
   <h3>🔐 Um escudo cibernético para a câmara fria</h3>
@@ -19,7 +19,6 @@
     <a href="https://wokwi.com/projects/480328417992209409"><img src="https://img.shields.io/badge/%F0%9F%9B%A1%EF%B8%8F_SIMULA%C3%87%C3%83O_NO_WOKWI-2563EB?style=for-the-badge&logo=arduino&logoColor=white" alt="Simulação no Wokwi"></a>
     <a href="https://github.com/NexusDev-Team/C-Shield-Edge"><img src="https://img.shields.io/badge/%F0%9F%92%BB_REPOSIT%C3%93RIO_EDGE-0B1F3A?style=for-the-badge&logo=github&logoColor=white" alt="Repositório Edge"></a>
     <a href="docs/edge-testes-estados.md"><img src="https://img.shields.io/badge/%F0%9F%A7%AA_TESTES_DOS_ESTADOS-00B8D9?style=for-the-badge&logo=readthedocs&logoColor=0B1F3A" alt="Testes dos estados"></a>
-    <!-- TODO: trocar o href "#" pelo link do vídeo no YouTube quando for publicado -->
     <a href="#"><img src="https://img.shields.io/badge/%E2%96%B6%EF%B8%8F_V%C3%8DDEO_NO_YOUTUBE-34D399?style=for-the-badge&logo=youtube&logoColor=0B1F3A" alt="Vídeo no YouTube"></a>
   </p>
 
@@ -64,7 +63,6 @@
     <li><a href="#dashboard-central">Dashboard (central)</a></li>
     <li><a href="#estrutura-do-repositório">Estrutura do repositório</a></li>
     <li><a href="#documentos">Documentos</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
     <li><a href="#equipe">Equipe</a></li>
   </ol>
 </details>
@@ -331,16 +329,6 @@ cd dashboard/backend && .venv/Scripts/python -m pytest
 cd dashboard/frontend && npx vitest run
 ```
 
-**Publicar (Vercel + túnel)**
-
-O backend roda no notebook e a Cloudflare o expõe, como na Vinheria. O Vercel serve só o site estático e reescreve `/api` para o túnel.
-
-1. Com o backend no ar: `cloudflared tunnel --url http://localhost:8000` e copie o endereço `https://....trycloudflare.com`.
-2. Em `dashboard/frontend/vercel.json`, troque `SUBSTITUA-PELO-TUNEL.trycloudflare.com` por esse endereço.
-3. No Vercel, crie um projeto novo com **Root Directory** `dashboard/frontend` e faça o deploy.
-
-O endereço do túnel muda a cada reinício do `cloudflared`; nesse caso repita os passos 2 e 3. Pelo túnel o backend **só lê**: cadastro, remoção e troca do IP da EC2 só funcionam no notebook (`localhost`), então o site público não deixa ninguém de fora alterar a frota. A API não tem autenticação.
-
 <p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
 
 ---
@@ -353,7 +341,7 @@ C-Shield-Edge/
 ├── README.md
 ├── docs/
 │   ├── edge-testes-estados.md    tabela de testes dos estados e teste ponta a ponta
-│   └── img/                      logo
+│   └── img/                      logo do C-Shield
 └── edge/
     ├── cshield/                  firmware (.ino, .h), diagram.json e libraries.txt do Wokwi
     ├── test/                     testes da lógica de decisão e dos cartões
@@ -372,27 +360,6 @@ dashboard/
 | Documento | Conteúdo |
 | --- | --- |
 | [`docs/edge-testes-estados.md`](docs/edge-testes-estados.md) | O que mexer no Wokwi e o que deve aparecer em cada estado; teste ponta a ponta com o FIWARE (executado em 11/11) |
-
-<p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
-
----
-
-<!-- ROADMAP -->
-## Roadmap
-
-- [x] Lógica de decisão pura, com testes no computador
-- [x] Firmware: sensores, relés, LED RGB, buzzer, LCD e publicação MQTT
-- [x] Ataque de calor e de frio, com resposta nos relés por direção
-- [x] Circuito no Wokwi e simulação pública
-- [x] Provisionamento no FIWARE e teste ponta a ponta
-- [x] Liberação do bloqueio por cartão NFC, com registro de quem liberou (sugestão do professor)
-- [x] Dashboard ligado ao FIWARE: mapa da frota, monitoramento, histórico de ataques e de liberações
-- [ ] Publicar o dashboard no Vercel (backend no notebook, com túnel da Cloudflare)
-- [ ] Vídeo de apresentação
-- [ ] Site `c-shield-web`: `/emulador`
-- [ ] Versão em JavaScript da lógica de decisão, para o emulador do site
-- [ ] Terceiro relé, para o C-Shield aquecer sozinho num ataque de frio
-- [ ] Calibração das taxas de aquecimento e de resfriamento com a DPS
 
 <p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
 
