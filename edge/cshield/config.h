@@ -193,6 +193,10 @@ static const Operador OPERADORES[] = {
 };                                                         // O cartão vermelho (AA:BB:CC:DD) fica de fora de propósito: demonstra a recusa.
 static const int N_OPERADORES = sizeof(OPERADORES) / sizeof(OPERADORES[0]);
 
+// Intervalo entre consultas ao leitor MFRC522. 100 ms é bem menor que o toque do cartão (500 ms no
+// Wokwi) e poupa o loop() de uma conversa SPI a cada volta.
+const unsigned long CARTAO_LEITURA_MS = 100;
+
 // Mesmo cartão encostado de novo dentro deste prazo é ignorado: o leitor relê o cartão
 // várias vezes por segundo enquanto ele está perto, e isso não pode virar várias liberações.
 const unsigned long CARTAO_ANTIREPIQUE_MS = 1500;
