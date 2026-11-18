@@ -76,7 +76,7 @@ static void atualizarRede(unsigned long agoraMs) {
   primeiraTentativa = false;
   ultimaTentativaMs = agoraMs;
   // Sonda rápida: com o broker fora do ar, o mqtt.connect() seguraria o loop() por segundos
-  // (e o botão de liberação ficaria sem resposta). A sonda limita o bloqueio a TIMEOUT_SONDA_MS.
+  // (e o leitor de cartão ficaria sem resposta). A sonda limita o bloqueio a TIMEOUT_SONDA_MS.
   if (!brokerAlcancavel()) {
     Serial.println("Broker MQTT inacessivel; tentando de novo em 10 s");
     return;
@@ -99,13 +99,31 @@ static bool horaAtual(int& hora) {
 // Monta o payload UltraLight:
 //   t|4.8|h|81|l|12|sp|5.0|dg|0|st|NORMAL|mt|-|bq|0|ex|0
 // Com o sensor inválido, t e h vão como -999 (não publica valor velho como se fosse leitura).
-static void montarPayload(char* buf, size_t n, const Leitura& l, const Decisao& d, int bloqueios) {
+// `sufixo` é o trecho extra de um evento de cartão (montarSufixoLiberacao/Recusa) ou "" quando
+// não há evento: assim o histórico de quem liberou só ganha uma linha por evento, não por ciclo.
+static void montarPayload(char* buf, size_t n, const Leitura& l, const Decisao& d, int bloqueios,
+                          const char* sufixo) {
   float t = l.valida ? l.temperatura : SETPOINT_AUSENTE;
   float h = l.valida ? l.umidade : SETPOINT_AUSENTE;
   float sp = l.temSetpoint ? l.setpoint : SETPOINT_AUSENTE;
-  snprintf(buf, n, "t|%.1f|h|%.0f|l|%.0f|sp|%.1f|dg|%d|st|%s|mt|%s|bq|%d|ex|%.1f",
+  snprintf(buf, n, "t|%.1f|h|%.0f|l|%.0f|sp|%.1f|dg|%d|st|%s|mt|%s|bq|%d|ex|%.1f%s",
            t, h, l.luzPct, sp, l.degelo ? 1 : 0,
-           nomeEstado(d.estado), nomeMotivo(d.motivo), bloqueios, d.exposicao);
+           nomeEstado(d.estado), nomeMotivo(d.motivo), bloqueios, d.exposicao, sufixo);
+}
+
+// Trecho do payload para uma liberação aceita: |lb|RT01|nl|3
+//   lb = quem liberou (código do papel do cartão), nl = total de liberações desde o boot.
+// O contador muda a cada evento, então o FIWARE sempre notifica o histórico, mesmo que o mesmo
+// papel libere duas vezes seguidas.
+static void montarSufixoLiberacao(char* buf, size_t n, const char* codigo, int totalLiberacoes) {
+  snprintf(buf, n, "|lb|%s|nl|%d", codigo, totalLiberacoes);
+}
+
+// Trecho do payload para um cartão recusado: |rj|RT01|rm|TRAVA|nr|2
+//   rj = quem tentou (código do papel, ou o UID sem ":" se o cartão não é cadastrado),
+//   rm = motivo da recusa, nr = total de recusas desde o boot.
+static void montarSufixoRecusa(char* buf, size_t n, const char* quem, const char* motivo, int totalRecusas) {
+  snprintf(buf, n, "|rj|%s|rm|%s|nr|%d", quem, motivo, totalRecusas);
 }
 
 static Estado ultimoEstadoPublicado = ST_NORMAL;
@@ -113,7 +131,7 @@ static bool   jaPublicou = false;
 static unsigned long ultimaPublicacaoMs = 0;
 
 // Publica o payload a cada PERIODO_PUBLICACAO_MS, e na hora quando o estado mudou ou
-// quando `evento` é true (um bloqueio novo). Sem conexão não faz nada: a pendência
+// quando `evento` é true (um bloqueio novo ou um cartão lido). Sem conexão não faz nada: a pendência
 // continua e sai na primeira oportunidade. Devolve true se publicou.
 static bool publicarSePreciso(const char* payload, Estado estado, bool& evento, unsigned long agoraMs) {
   if (!mqtt.connected()) return false;
