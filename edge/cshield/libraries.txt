@@ -2,3 +2,5 @@ PubSubClient
 DHT sensor library
 Adafruit Unified Sensor
 LiquidCrystal I2C
+
+MFRC522
