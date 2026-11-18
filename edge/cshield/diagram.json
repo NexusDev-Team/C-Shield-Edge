@@ -77,8 +77,9 @@
     {
       "type": "board-mfrc522",
       "id": "rfid1",
-      "top": -290,
-      "left": 330,
+      "top": -373.84,
+      "left": -260.45,
+      "rotate": 270,
       "attrs": { "label": "Aproxime o cartao (Tap)" }
     },
     {
