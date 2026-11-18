@@ -1,0 +1,54 @@
+/*
+ * C-Shield — Dashboard (terceira camada: lê o FIWARE)
+ * GS 2026.2 "CitizenTech" · Edge Computing & Computer Systems · FIAP · Prof. Dr. Fábio H. Cabrini
+ * Equipe Nexus Vision. Integrantes:
+ *   Isac Nilton Fernandes de Oliveira — RM573282
+ *   João Benedito de Oliveira Simplício — RM570206
+ *   Leonardo Formigari — RM573291
+ *   Luis Fernando — RM570959
+ *   Nicolas Cinel — RM572940
+ */
+
+/* Estilos globais do site. Tokens e efeitos ficam em arquivos próprios. */
+@import "tailwindcss";
+@import "./tokens.css";
+@import "./efeitos.css";
+
+/* Container padrão do site (Design System v1.0): 88% da tela, até 1440 px, e 24 px de margem no
+   celular. Navbar, rodapé, seções e páginas usam o mesmo, para tudo alinhar na mesma margem. */
+@utility conteudo {
+  margin-inline: auto;
+  width: 88%;
+  max-width: 90rem;
+
+  @media (max-width: 47.99rem) {
+    width: calc(100% - 3rem);
+  }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-noite-950 font-texto text-base leading-normal text-gelo-50 antialiased;
+    /* A atmosfera (brilhos, grade e grão) vem do componente FundoAtmosfera; aqui fica só a cor base. */
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-titulo;
+  }
+
+  /* Evita a última linha de um parágrafo ou item de lista com uma palavra só. */
+  p,
+  li {
+    text-wrap: pretty;
+  }
+
+  /* Foco visível em todos os controles (W4). */
+  :focus-visible {
+    outline: 2px solid var(--color-led-forte);
+    outline-offset: 3px;
+  }
+}

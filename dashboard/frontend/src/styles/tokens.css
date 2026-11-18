@@ -1,0 +1,66 @@
+/*
+ * C-Shield — Dashboard (terceira camada: lê o FIWARE)
+ * GS 2026.2 "CitizenTech" · Edge Computing & Computer Systems · FIAP · Prof. Dr. Fábio H. Cabrini
+ * Equipe Nexus Vision. Integrantes:
+ *   Isac Nilton Fernandes de Oliveira — RM573282
+ *   João Benedito de Oliveira Simplício — RM570206
+ *   Leonardo Formigari — RM573291
+ *   Luis Fernando — RM570959
+ *   Nicolas Cinel — RM572940
+ */
+
+/*
+ * Tokens do Design System v1.0 "Cyber-criogênico" (docs/specs/web/design.md §0, decisão de 12/11).
+ * Os NOMES dos tokens vêm das versões anteriores e foram mantidos para não mexer em todos os
+ * componentes; só os valores mudaram. Tailwind v4: o @theme gera as utilidades
+ * (bg-noite-950, text-gelo-50...).
+ * Regras: led-fraco NUNCA em texto; texto-mudo só em 18 px ou mais; verde, âmbar e vermelho só
+ * para estado real; o ciano é destaque, não a cor de tudo.
+ */
+@theme {
+  /* Fundos */
+  --color-noite-950: #020912;
+  --color-noite-900: #061522;
+  --color-superficie: #0a1b2a;
+  --color-elevado: #10283a;
+  --color-painel: rgba(10, 27, 42, 0.65);
+  --color-borda: rgba(100, 207, 255, 0.18);
+
+  /* Texto */
+  --color-gelo-50: #f4f8fc;
+  --color-gelo-100: #d6e2ec;
+  --color-gelo-300: #9bafbe;
+  --color-texto-mudo: #6f8597;
+
+  /* Marca: ciano de ação, azul-gelo de luz e azul profundo de decoração */
+  --color-led-forte: #00cfff;
+  --color-ciano: #00cfff;
+  --color-gelo-azul: #64cfff;
+  --color-led-fraco: #063a5a;
+
+  /* Estado real */
+  --color-ok: #00e59b;
+  --color-atencao: #ffb547;
+  --color-critico: #ff4058;
+  --color-ataque: #ff4058;
+
+  /* Display de vidro do C-Shield: fundo azul-noite, texto azul-gelo (contraste acima de 7:1). */
+  --color-lcd-fundo: #0a1b2a;
+  --color-lcd-texto: #64cfff;
+
+  /* Pílula de estado "estabilizado" (verde-menta) e fundo dos alertas. */
+  --color-menta: #bbf7d0;
+  --color-menta-texto: #052e16;
+  --color-alerta-fundo: rgba(255, 64, 88, 0.12);
+
+  --font-titulo: "Chakra Petch", system-ui, sans-serif;
+  --font-texto: "Geist", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-lcd: "JetBrains Mono", ui-monospace, monospace;
+
+  /* Forma e movimento */
+  --radius-card: 16px;
+  --ease-suave: cubic-bezier(0.22, 1, 0.36, 1);
+  --shadow-vidro: 0 8px 32px rgba(0, 0, 0, 0.25);
+  --shadow-glow-ciano: 0 0 24px rgba(0, 207, 255, 0.18);
+}

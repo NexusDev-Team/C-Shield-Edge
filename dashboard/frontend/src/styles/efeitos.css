@@ -1,0 +1,319 @@
+/*
+ * C-Shield — Dashboard (terceira camada: lê o FIWARE)
+ * GS 2026.2 "CitizenTech" · Edge Computing & Computer Systems · FIAP · Prof. Dr. Fábio H. Cabrini
+ * Equipe Nexus Vision. Integrantes:
+ *   Isac Nilton Fernandes de Oliveira — RM573282
+ *   João Benedito de Oliveira Simplício — RM570206
+ *   Leonardo Formigari — RM573291
+ *   Luis Fernando — RM570959
+ *   Nicolas Cinel — RM572940
+ */
+
+/*
+ * Efeitos do Design System v1.0 "Cyber-criogênico" (design.md §0).
+ * Ciano é destaque, não a cor de tudo; vermelho só em ataque e alerta real.
+ * Nada pisca mais de 3 vezes por segundo (W46) e tudo para com prefers-reduced-motion (W47).
+ */
+
+@layer components {
+  .faisca-pulsa {
+    animation: faisca-pulsa 1.25s ease-in-out infinite;
+  }
+
+  /* LED amarelo piscando (FALHA_SENSOR): 0,8 Hz, bem abaixo das 3 piscadas por segundo (W46). */
+  .led-pisca {
+    animation: led-pisca 1.25s steps(1, end) infinite;
+  }
+
+  /* Ventoinha ligada: gira devagar. */
+  .gira {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: gira 1.1s linear infinite;
+  }
+
+  /* Linha de ataque do mapa: o tracejado corre do atacante ao alvo (movimento contínuo, sem piscar). */
+  .linha-fluxo {
+    stroke-dasharray: 14 10;
+    animation: linha-fluxo 0.7s linear infinite;
+  }
+
+  /* Prévia do ataque: a geada flutua devagar e o halo do escudo respira (ciclos de 4 s ou mais, nada pisca). */
+  .geada-flutua {
+    animation: geada-flutua 6s ease-in-out infinite;
+  }
+
+  .halo-respira {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: halo-respira 5s ease-in-out infinite;
+  }
+
+  /* O C-Shield assumiu: o texto fica na cor da marca, firme e sem oscilar. Sem brilho no texto
+     (o detector de design aponta o brilho colorido como marca de interface genérica). */
+  .led-forte {
+    color: var(--color-led-forte);
+  }
+
+  /* Linha do gráfico de área: entra desenhada uma vez, ao aparecer. Só o traço anima; depois do fim
+     a linha volta ao normal (sem tracejado), então com movimento reduzido ela já aparece inteira. */
+  .desenha {
+    animation: desenha 0.9s ease-out;
+  }
+
+  /* Falha de energia: só no título do emulador durante um ataque. Ciclo de 1,5 s com 2 quedas = 1,33 por segundo. */
+  .led-falha {
+    animation: led-falha 1.5s steps(1, end) infinite;
+  }
+
+  /* Cartão padrão do site: vidro (fundo translúcido, desfoque, borda fina azul-gelo e sombra suave).
+     Usar com moderação: o espaço vazio também faz parte do design. Texto sempre opaco. */
+  .cartao {
+    position: relative;
+    background-color: var(--color-painel);
+    border: 1px solid var(--color-borda);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-vidro);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+  }
+
+  /* Palavra de destaque do título (a 2ª linha do hero): ciano sólido, que já passa em contraste.
+     Onde há suporte, vira um degradê ciano para azul-gelo (os dois tons passam de 4,5:1). */
+  /* Faixa de fundo das seções alternadas: aparece e some em degradê, sem borda nem corte seco, na
+     mesma cor de fundo do resto do site. Só decoração (vem com aria-hidden). */
+  /* Atmosfera fixa atrás de todas as páginas: brilho glacial à direita (como o halo do aparelho do
+     banner), azul profundo embaixo à esquerda e névoa fria no centro. A grade técnica (::before)
+     some nas bordas por máscara; o grão de gelo (::after) é ruído SVG com mistura overlay. */
+  .fundo-atmosfera {
+    background-color: var(--color-noite-950);
+    background-image:
+      radial-gradient(ellipse 55% 45% at 85% 20%, rgba(0, 207, 255, 0.1), transparent 70%),
+      radial-gradient(ellipse 60% 50% at 10% 85%, rgba(6, 58, 90, 0.45), transparent 70%),
+      radial-gradient(ellipse 80% 60% at 50% 50%, rgba(100, 207, 255, 0.04), transparent 75%);
+  }
+
+  /* Fumaça gelada: a arte de fumaça do banner em tamanho natural (sem ampliar, para ficar nítida),
+     uma cópia em cada canto de baixo, a da esquerda espelhada. O preto da imagem some com a mistura
+     "screen"; as máscaras dissolvem o alto e a borda de dentro, então não há aresta. O invólucro
+     (.fumaca-lado) leva a deriva lenta e a imagem (.fumaca-img) leva o espelho, para os dois
+     transform não brigarem. Para com movimento reduzido. */
+  .fumaca-lado {
+    position: absolute;
+    bottom: 0;
+    width: min(52vw, 834px);
+    aspect-ratio: 834 / 941;
+    mix-blend-mode: screen;
+    opacity: 0.28;
+    animation: fumaca-deriva 22s ease-in-out infinite alternate;
+  }
+
+  .fumaca-img {
+    position: absolute;
+    inset: 0;
+    background-image: var(--imagem-fumaca);
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+  }
+
+  .fumaca-direita {
+    right: 0;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 55%), linear-gradient(to right, transparent 0%, #000 35%);
+    -webkit-mask-composite: source-in;
+    mask-image: linear-gradient(to bottom, transparent 0%, #000 55%), linear-gradient(to right, transparent 0%, #000 35%);
+    mask-composite: intersect;
+  }
+
+  .fumaca-esquerda {
+    left: 0;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 55%), linear-gradient(to left, transparent 0%, #000 35%);
+    -webkit-mask-composite: source-in;
+    mask-image: linear-gradient(to bottom, transparent 0%, #000 55%), linear-gradient(to left, transparent 0%, #000 35%);
+    mask-composite: intersect;
+  }
+
+  .fumaca-esquerda .fumaca-img {
+    transform: scaleX(-1);
+  }
+
+  /* No celular só a da direita, na largura da tela; a esquerda some. */
+  @media (max-width: 767px) {
+    .fumaca-direita {
+      width: 100vw;
+    }
+
+    .fumaca-esquerda {
+      display: none;
+    }
+  }
+
+  /* Fim do banner da Home: a imagem some por transparência e revela o fundo fixo (fumaça e chuva),
+     em vez de terminar numa cor sólida. */
+  .banner-dissolve {
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 62%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 0%, #000 62%, transparent 100%);
+  }
+
+  /* Névoa atrás dos blocos de texto: o fundo (chuva e fumaça) aparece desfocado e levemente escurecido,
+     com as bordas dissolvidas por máscara (sem caixa visível), para o texto ler limpo. Vai sempre num
+     invólucro estático, FORA de Revelar e motion: o backdrop-filter só enxerga o que está atrás até
+     o primeiro ancestral com opacidade ou transform, e esses animam ao entrar. */
+  .nevoa-texto {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .nevoa-texto::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    pointer-events: none;
+    inset: -1.5rem -2.5rem;
+    background: rgba(2, 9, 18, 0.38);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    -webkit-mask-image: radial-gradient(ellipse closest-side at 50% 50%, #000 55%, transparent 100%);
+    mask-image: radial-gradient(ellipse closest-side at 50% 50%, #000 55%, transparent 100%);
+  }
+
+  /* No celular a névoa não passa da margem da tela (sem rolagem horizontal). */
+  @media (max-width: 767px) {
+    .nevoa-texto::before {
+      inset: -1rem -1rem;
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+    }
+  }
+
+  /* Névoa do rodapé: mais densa e só sobe do fim da página, sem borda de topo. */
+  .nevoa-rodape {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .nevoa-rodape::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    pointer-events: none;
+    inset: 0;
+    background: rgba(2, 9, 18, 0.55);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 45%);
+    mask-image: linear-gradient(to bottom, transparent 0%, #000 45%);
+  }
+
+  /* Chuva de binários: forte nas bordas, quase apagada no miolo, onde fica o texto. */
+  .chuva-binaria {
+    -webkit-mask-image: radial-gradient(ellipse 45% 60% at 40% 50%, transparent 0%, rgba(0, 0, 0, 0.25) 45%, #000 85%);
+    mask-image: radial-gradient(ellipse 45% 60% at 40% 50%, transparent 0%, rgba(0, 0, 0, 0.25) 45%, #000 85%);
+  }
+
+  .titulo-ciano {
+    color: var(--color-ciano);
+  }
+
+  @supports ((background-clip: text) or (-webkit-background-clip: text)) {
+    .titulo-ciano {
+      background-image: linear-gradient(90deg, var(--color-ciano), var(--color-gelo-azul));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+  }
+
+  /* Rótulo técnico: caixa alta, mono e espaçamento largo ("TECNOLOGIA. SEGURANÇA. CONTROLE."). */
+  .rotulo-tecnico {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--color-gelo-300);
+  }
+
+  /* Pulso de luz que corre pela linha entre os passos do "como funciona" (6 s por volta). */
+  .pulso-linha {
+    animation: pulso-linha 6s linear infinite;
+  }
+
+}
+
+@keyframes fumaca-deriva {
+  from { transform: translate3d(0, 0, 0); opacity: 0.22; }
+  to { transform: translate3d(-10px, -6px, 0); opacity: 0.32; }
+}
+
+@keyframes desenha {
+  from {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes pulso-linha {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(500%); }
+}
+
+@keyframes led-falha {
+  0%, 100% { opacity: 1; }
+  40% { opacity: 0.35; }
+  46% { opacity: 1; }
+  70% { opacity: 0.5; }
+  76% { opacity: 1; }
+}
+
+/* Faíscas da ilustração: pulso suave de opacidade, 0,8 Hz (nunca perto de 3 por segundo). */
+@keyframes faisca-pulsa {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+@keyframes led-pisca {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
+}
+
+@keyframes gira {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes geada-flutua {
+  0%, 100% { transform: translateY(0); opacity: 0.5; }
+  50% { transform: translateY(-6px); opacity: 0.9; }
+}
+
+@keyframes halo-respira {
+  0%, 100% { transform: scale(1); opacity: 0.85; }
+  50% { transform: scale(1.04); opacity: 1; }
+}
+
+@keyframes linha-fluxo {
+  to { stroke-dashoffset: -24; }
+}
+
+/* Sem movimento: nada anima (W47). */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .desenha,
+  .led-falha,
+  .faisca-pulsa,
+  .led-pisca,
+  .gira,
+  .linha-fluxo,
+  .geada-flutua,
+  .halo-respira,
+  .fumaca-lado,
+  .pulso-linha {
+    animation: none;
+  }
+
+}
