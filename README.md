@@ -12,7 +12,7 @@
   <p>
     Um ESP32 entre o controlador e a geladeira, com sensores próprios e uma política gravada nele.<br>
     Se alguém invade o controlador e manda esquentar (ou esfriar), o C-Shield percebe, assume o controle e avisa no local.<br>
-    <strong>Vê de longe. Só obedece de perto.</strong>
+    <strong>Alarmes avisam. O C-Shield age.</strong>
   </p>
 
   <p>
