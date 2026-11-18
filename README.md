@@ -80,7 +80,7 @@
 | **Cidade** | São Paulo |
 | **Cidadão beneficiado** | Quem depende do que está guardado no frio sem ver o equipamento: o paciente que precisa de transfusão, a criança que vai tomar vacina na UBS e a família que compra no mercado do bairro. Quem usa o C-Shield é o responsável pelo frio sem equipe de segurança: o dono do açougue, a farmacêutica, a enfermeira da sala de vacina. |
 | **Problema, em uma frase** | Controladores de câmaras frias conectados à internet podem ser invadidos e mandados esquentar, e quem guarda vacinas, sangue e alimentos só descobre horas depois, quando o produto já está perdido. |
-| **Como funciona** | Um ESP32 independente, instalado junto da câmara, mede a temperatura com sensores próprios e compara com uma política gravada nele. Diante de uma ordem perigosa, corta o aquecimento por um relé, trava novas ordens e avisa no local, mesmo sem internet. Ele não recebe comandos pela rede: só envia dados. A liberação é presencial, por um botão no aparelho. |
+| **Como funciona** | Um ESP32 independente, instalado junto da câmara, mede a temperatura com sensores próprios e compara com uma política gravada nele. Diante de uma ordem perigosa, corta o aquecimento por um relé, trava novas ordens e avisa no local, mesmo sem internet. Ele não recebe comandos pela rede: só envia dados. A liberação é presencial: só um cartão NFC cadastrado, encostado no aparelho, encerra o bloqueio, e cada liberação fica registrada com o papel de quem liberou. |
 | **O que cada parte faz** | **Edge:** o C-Shield no Wokwi, publicando no FIWARE · **Python:** central que cadastra câmaras, avalia ordens recebidas e calcula a exposição térmica · **DPS:** modelo do aquecimento (lei de Newton) que mostra quanto tempo o produto aguenta e quanto o C-Shield evita perder · **Front e Web:** site com o emulador do ataque, o painel do dispositivo e o registro de incidentes · **Experiência:** requisitos, caso de uso e protótipo · **Pitch:** a história e o negócio |
 | **Links** | Repositório do site (`c-shield-web`): em criação · Repositório do Edge: [NexusDev-Team/C-Shield-Edge](https://github.com/NexusDev-Team/C-Shield-Edge) · Wokwi: [projeto público](https://wokwi.com/projects/480328417992209409) · Site publicado: em criação |
 | **Indicador de impacto** | Tempo entre o ataque e a resposta (na Europa, 3h30; com o C-Shield, segundos) · exposição térmica evitada (°C·min) · ordens perigosas bloqueadas |
@@ -121,7 +121,7 @@ Em São Paulo, os mesmos equipamentos existem em salas de vacina de UBS, hemocen
 - 🛡️ **Assume o controle:** diante de uma ordem perigosa, o relé 1 corta o aquecedor e o relé 2 liga a ventoinha de emergência. Num ataque de frio, o aquecedor fica liberado e a ventoinha de emergência fica desligada.
 - 🚨 **Avisa no local:** LED RGB azul no bloqueio, buzzer que apita até a temperatura voltar à faixa e LCD 16x2 com o estado e a temperatura.
 - 📡 **Só envia dados:** publica no FIWARE por MQTT. Não há `subscribe`, callback, atualização remota nem servidor: "aqui não entra nada".
-- 🔑 **Libera só de perto:** o bloqueio não acaba sozinho. Alguém precisa segurar o botão do aparelho por 3 segundos.
+- 🔑 **Libera só de perto:** o bloqueio não acaba sozinho. Alguém precisa encostar no aparelho um cartão NFC cadastrado, depois da trava mínima. O papel do cartão (por exemplo, `RT01`, responsável técnico) vai para o log do aparelho e para o histórico no FIWARE; cartão desconhecido é recusado e a tentativa também fica registrada.
 
 ### Funcionalidades
 
@@ -184,7 +184,7 @@ O Edge cobre as três primeiras camadas; o site (outro repositório) fecha a qua
 | DHT22 | GPIO 4 | Temperatura e umidade próprias |
 | LDR | GPIO 34 (ADC) | Luminosidade; acima de 40% significa porta aberta |
 | Chave "Controlador" (só Wokwi) | GPIO 32 | Simula o setpoint que o controlador manda: NORMAL (5 °C) ou ATAQUE (45 °C) |
-| Botão "Liberar" | GPIO 19 | Liberação presencial: segurar por 3 s |
+| Leitor NFC MFRC522 | SCK 14 · MISO 19 · MOSI 13 · SDA (SS) 15 · RST 17 | Liberação presencial por cartão cadastrado. Usa um SPI próprio, porque o SPI padrão colidiria com o relé 1 e o buzzer |
 | Relé 1, contato NF | GPIO 23 | Em série com o aquecedor; acionado, corta |
 | Relé 2, contato NA | GPIO 33 | Liga a ventoinha de emergência |
 | LED RGB | R 25 · G 26 · B 27 | Cor do estado |
@@ -202,7 +202,7 @@ O Edge cobre as três primeiras camadas; o site (outro repositório) fecha a qua
 | `CRITICO` | Vermelho (azul se há bloqueio) | Contínuo até voltar à faixa | `Estado: Critico` |
 | `FALHA_SENSOR` | Amarelo piscando | 2 bipes a cada 10 s | `Estado: Falha` |
 
-A linha 2 do LCD alterna a cada 2 s entre `Temp: 5.0°C` e as mensagens do estado (motivo, `Liberacao em 58s`, `Segure botao 3s`...). O LED e o buzzer rodam por `millis()`, sem `delay()`.
+A linha 2 do LCD alterna a cada 2 s entre `Temp: 5.0°C` e as mensagens do estado (motivo, `Liberacao em 58s`, `Passe o cartao`...). Ao ler um cartão, o LCD mostra por 3 s `LIBERADO POR` com o papel, ou `Cartao recusado` com o motivo. O LED e o buzzer rodam por `millis()`, sem `delay()`.
 
 ### Regras de bloqueio
 
@@ -213,7 +213,24 @@ O C-Shield julga a **ordem** antes do **efeito**:
 3. **Aquecimento rápido** (acima de 0,5 °C/min, valor provisório) com a porta fechada.
 4. **Resfriamento rápido** (acima de 0,5 °C/min), com a porta aberta ou fechada.
 
-Resposta nos relés: no **calor**, corta o aquecedor e liga a ventoinha de emergência; no **frio**, deixa o aquecedor liberado e mantém a ventoinha desligada. Durante o bloqueio as ordens do controlador são ignoradas. A liberação exige o botão por 3 s depois da trava mínima (60 s na demonstração, 30 min no uso real).
+Resposta nos relés: no **calor**, corta o aquecedor e liga a ventoinha de emergência; no **frio**, deixa o aquecedor liberado e mantém a ventoinha desligada. Durante o bloqueio as ordens do controlador são ignoradas. A liberação exige um cartão NFC cadastrado depois da trava mínima (60 s na demonstração, 30 min no uso real). Se a ordem do controlador ainda for inválida ou a temperatura ainda estiver além da tolerância, o bloqueio recomeça e a tentativa conta como recusada.
+
+### Cartões de liberação
+
+Cada cartão identifica um **papel**, não uma pessoa. A tabela fica em `OPERADORES` (`edge/cshield/config.h`) e usa os UIDs dos cartões prontos da peça MFRC522 do Wokwi. No aparelho físico, troque pelos UIDs dos cartões reais.
+
+| Cartão no Wokwi | UID | Código | Papel no LCD |
+| --- | --- | --- | --- |
+| Azul | `01:02:03:04` | `RT01` | Resp. tecnico |
+| Verde | `11:22:33:44` | `ENF01` | Enfermagem |
+| Amarelo | `55:66:77:88` | `MAN01` | Manutencao |
+| NFC Tag | `04:11:22:33:44:55:66` | `SUP01` | Supervisao |
+| Key Fob (chaveiro) | `C0:FF:EE:99` | `GER01` | Gerencia |
+| Vermelho | `AA:BB:CC:DD` | não cadastrado | Recusado (`NAO_CADASTRADO`) |
+
+Motivos de recusa registrados: `TRAVA` (a trava mínima ainda não acabou), `ORDEM` (o controlador ainda manda uma ordem inválida), `TEMPERATURA` (a temperatura segue além da tolerância) e `NAO_CADASTRADO` (cartão fora da tabela). Cartão cadastrado sem bloqueio ativo só mostra `Sem bloqueio` e não gera evento.
+
+Cada liberação ou recusa aparece no Serial com data e hora (`bloqueio LIBERADO por RT01 (Resp. tecnico)`) e é publicada **uma vez**, no momento do evento, para formar o histórico no FIWARE. Ler o cartão não é receber um comando: o leitor é entrada local, e o firmware continua sem `subscribe`, callback, atualização remota ou servidor.
 
 ### Nomes no FIWARE
 
@@ -226,6 +243,7 @@ Resposta nos relés: no **calor**, corta o aquecedor e liga a ventoinha de emerg
 | Tópico | `/TEF/cshield001/attrs` (único; nenhum de comando) |
 | Payload UltraLight | `t\|4.8\|h\|81\|l\|12\|sp\|5.0\|dg\|0\|st\|NORMAL\|mt\|-\|bq\|0\|ex\|0` |
 | Atributos no Orion | `temperature` · `humidity` · `luminosity` · `setpoint` · `defrost` · `state` · `reason` · `blocks` · `exposure` |
+| Eventos de cartão (só no momento do evento) | Liberação: `lb\|RT01\|nl\|3` → `releasedBy` · `releaseCount`. Recusa: `rj\|RT01\|rm\|TRAVA\|nr\|2` → `refusedBy` · `refusedReason` · `refusalCount` |
 
 <p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
 
@@ -240,12 +258,13 @@ Abra o [projeto público](https://wokwi.com/projects/480328417992209409) e inici
 
 - Chave **"Controlador"** para a direita simula o ataque (setpoint de 45 °C).
 - O slider do **DHT22** muda a temperatura; o do **LDR** abre a porta.
-- O botão verde **libera** o bloqueio (segurar por 3 s).
+- Clique no leitor **MFRC522** e use **Tap** (ou as teclas `b`, `g`, `y`, `n`, `k`, `r`) para encostar um cartão. Depois da trava mínima, um cartão cadastrado **libera** o bloqueio; o cartão vermelho (`r`) é recusado.
 
 **2. Testes da lógica (sem placa)**
 
 ```bash
 g++ -std=c++17 -Wall -Wextra -I edge/cshield edge/test/test_decisao.cpp -o t && ./t
+g++ -std=c++17 -Wall -Wextra -I edge/cshield edge/test/test_operadores.cpp -o o && ./o
 ```
 
 **3. FIWARE**
