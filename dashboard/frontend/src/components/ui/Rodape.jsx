@@ -18,7 +18,7 @@ export default function Rodape() {
       <div className="conteudo flex flex-wrap items-center justify-between gap-6">
         <Logo variante="compacta" />
         <p className="max-w-xl text-sm text-gelo-300">
-          Vê de longe. Só obedece de perto. Esta central só lê o que o C-Shield envia: nada aqui manda ordens
+          Alarmes avisam. O C-Shield age. Esta central só lê o que o C-Shield envia: nada aqui manda ordens
           a ele, e o bloqueio só é liberado no local, com um cartão cadastrado.
         </p>
       </div>

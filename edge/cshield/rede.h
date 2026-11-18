@@ -14,7 +14,7 @@
  *
  * Este módulo nunca recebe ordens: o C-Shield só envia dados ao FIWARE, no tópico
  * /TEF/cshield001/attrs (UltraLight 2.0). Não há assinatura de tópico, callback,
- * OTA nem servidor HTTP. "Vê de longe. Só obedece de perto."
+ * OTA nem servidor HTTP. "Alarmes avisam. O C-Shield age."
  *
  * Sem rede o resto do firmware continua igual: a decisão e as respostas locais não
  * dependem daqui. A reconexão é tentada a cada INTERVALO_RECONEXAO_MS.
