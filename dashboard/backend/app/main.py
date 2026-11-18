@@ -24,8 +24,9 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager, suppress
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.api import routes_config, routes_data, routes_devices, routes_fleet
 from app.api.errors import register_error_handlers
@@ -39,6 +40,9 @@ from app.services.poller import Poller
 from app.services.readings import ReadingsService
 
 log = logging.getLogger(__name__)
+
+# Métodos que não alteram nada: os únicos aceitos vindos do túnel público.
+METODOS_DE_LEITURA = ("GET", "HEAD", "OPTIONS")
 
 
 @asynccontextmanager
@@ -93,6 +97,21 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_headers=["*"],
     )
     register_error_handlers(app)
+
+    @app.middleware("http")
+    async def somente_leitura_pelo_tunel(request: Request, call_next):
+        """Pedidos que chegam pelo túnel da Cloudflare só podem LER.
+
+        O cloudflared acrescenta o header cf-connecting-ip; o acesso local (uvicorn direto
+        ou proxy do Vite) não o tem. Assim o site público mostra tudo, mas ninguém de fora
+        cadastra, remove C-Shields nem troca o IP da EC2. O cadastro é feito no notebook.
+        """
+        if request.method not in METODOS_DE_LEITURA and "cf-connecting-ip" in request.headers:
+            return JSONResponse(status_code=403, content={
+                "detail": "Somente leitura pelo endereço público: cadastre e configure no notebook.",
+                "service": "dashboard"})
+        return await call_next(request)
+
     app.include_router(routes_config.router)
     app.include_router(routes_devices.router)
     app.include_router(routes_data.router)

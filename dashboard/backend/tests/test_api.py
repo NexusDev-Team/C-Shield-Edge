@@ -68,3 +68,16 @@ def test_health_sem_ec2_ligada_nao_quebra(client):
         respx.get(f"http://10.0.0.1:{porta}{caminho}").mock(side_effect=httpx.ConnectError("x"))
     corpo = client.get("/api/config/health").json()
     assert corpo["ok"] is False and corpo["orion"]["ok"] is False
+
+
+def test_tunel_publico_so_le(client):
+    """Pedido com o header do cloudflared não pode alterar nada; o acesso local pode."""
+    pelo_tunel = {"cf-connecting-ip": "203.0.113.9"}
+    assert client.get("/api/fleet", headers=pelo_tunel).status_code == 200
+    for metodo, caminho in (("put", "/api/config"), ("post", "/api/devices"),
+                            ("delete", "/api/devices/cshield001")):
+        resposta = client.request(metodo, caminho, headers=pelo_tunel, json={"ec2_ip": "9.9.9.9"})
+        assert resposta.status_code == 403, caminho
+        assert resposta.json()["service"] == "dashboard"
+    assert client.get("/api/config").json()["ec2_ip"] == "10.0.0.1"      # nada mudou
+    assert client.put("/api/config", json={"ec2_ip": "9.9.9.9"}).status_code == 200   # local passa
