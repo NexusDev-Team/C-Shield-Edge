@@ -15,13 +15,14 @@ import { Link, useParams } from 'react-router-dom'
 import { api } from '../api/client.js'
 import CartoesSensores from '../components/dispositivo/CartoesSensores.jsx'
 import GraficoTermico from '../components/dispositivo/GraficoTermico.jsx'
+import HistoricoAtaques from '../components/dispositivo/HistoricoAtaques.jsx'
 import HistoricoCartoes from '../components/dispositivo/HistoricoCartoes.jsx'
 import WidgetLeitura from '../components/dispositivo/WidgetLeitura.jsx'
 import Carregando from '../components/ui/Carregando.jsx'
 import ErroMensagem from '../components/ui/ErroMensagem.jsx'
 import PainelVidro from '../components/ui/PainelVidro.jsx'
 import TituloPagina from '../components/ui/TituloPagina.jsx'
-import { EVENTOS_TABELA, LEITURA_POLL_MS, PONTOS_GRAFICO } from '../constants.js'
+import { ATAQUES_TABELA, EVENTOS_TABELA, LEITURA_POLL_MS, PONTOS_GRAFICO } from '../constants.js'
 import { LOCAIS } from '../domain/locais.js'
 import { situacaoDoDispositivo } from '../domain/estados.js'
 import { PERFIS_FIRMWARE } from '../domain/perfis.js'
@@ -29,18 +30,20 @@ import { useLeitura } from '../hooks/useLeitura.js'
 
 // Monitoramento de um C-Shield, no layout da seção "Monitoramento de temperatura" do site: card
 // da temperatura atual à esquerda e histórico térmico à direita, agora com dados reais; abaixo,
-// os números de apoio e o histórico de liberações por cartão NFC. Tudo atualiza a cada 5 s.
+// os números de apoio, o histórico de ataques barrados e o de liberações por cartão NFC. Tudo atualiza a cada 5 s.
 export default function Dispositivo() {
   const { id } = useParams()
   const carregarFrota = api.getFleet
   const carregarAtual = useCallback(() => api.getCurrent(id), [id])
   const carregarHistorico = useCallback(() => api.getHistory(id, { attr: 'temperature', lastN: PONTOS_GRAFICO }), [id])
   const carregarEventos = useCallback(() => api.getEventos(id, EVENTOS_TABELA), [id])
+  const carregarAtaques = useCallback(() => api.getAtaques(id, ATAQUES_TABELA), [id])
 
   const frota = useLeitura(carregarFrota, LEITURA_POLL_MS)
   const atual = useLeitura(carregarAtual, LEITURA_POLL_MS)
   const historico = useLeitura(carregarHistorico, LEITURA_POLL_MS)
   const eventos = useLeitura(carregarEventos, LEITURA_POLL_MS)
+  const ataques = useLeitura(carregarAtaques, LEITURA_POLL_MS)
 
   const dispositivo = frota.dados?.dispositivos.find((d) => d.device_id === id)
   const local = LOCAIS.find((l) => l.id === dispositivo?.local_id)
@@ -111,6 +114,12 @@ export default function Dispositivo() {
         </div>
 
         <CartoesSensores atual={atual.dados} />
+
+        {ataques.erro && !ataques.dados ? (
+          <ErroMensagem mensagem={ataques.erro} aoTentarDeNovo={ataques.recarregar} />
+        ) : (
+          <HistoricoAtaques ataques={ataques.dados ?? []} />
+        )}
 
         {eventos.erro && !eventos.dados ? (
           <ErroMensagem mensagem={eventos.erro} aoTentarDeNovo={eventos.recarregar} />

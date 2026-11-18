@@ -52,6 +52,35 @@ export function rotuloMotivo(motivo) {
   return ROTULO_MOTIVO[motivo] ?? motivo
 }
 
+// Direção do ataque: calor (esquentar o produto) ou frio (esfriar demais, "gelado"). Cor sempre
+// com texto. `indefinida` cobre o setpoint sem valor conhecido.
+export const DIRECAO_ATAQUE = {
+  calor: { rotulo: 'Calor', cor: 'var(--color-critico)' },
+  frio: { rotulo: 'Frio', cor: 'var(--color-gelo-azul)' },
+  indefinida: { rotulo: 'Indefinido', cor: 'var(--color-texto-mudo)' },
+}
+
+// "Como foi feito": o jeito que a ordem perigosa veio, em português. O setpoint aparece com o
+// valor que o controlador mandou, quando o histórico o trouxe.
+export function descreverAtaque({ motivo, setpoint, direcao }) {
+  switch (motivo) {
+    case 'SETPOINT_INVALIDO': {
+      const valor = typeof setpoint === 'number' ? ` para ${setpoint.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} °C` : ''
+      return `Setpoint alterado${valor}${direcao === 'frio' ? ' (abaixo da faixa)' : direcao === 'calor' ? ' (acima da faixa)' : ''}`
+    }
+    case 'AQUECIMENTO_RAPIDO':
+      return 'Temperatura subindo rápido demais'
+    case 'RESFRIAMENTO_RAPIDO':
+      return 'Temperatura caindo rápido demais'
+    case 'DEGELO_FORA_HORARIO':
+      return 'Degelo comandado fora do horário'
+    case 'DEGELO_LONGO':
+      return 'Degelo ligado por tempo demais'
+    default:
+      return motivo
+  }
+}
+
 // Motivo de uma recusa de cartão (atributo `refusedReason`), em português.
 const ROTULO_RECUSA = {
   TRAVA: 'Trava mínima ainda ativa',

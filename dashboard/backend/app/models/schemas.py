@@ -168,6 +168,15 @@ class HistoryQuery(BaseModel):
         return self
 
 
+class AtaqueRegistrado(BaseModel):
+    """Um ataque (bloqueio novo) que o C-Shield barrou, do histórico do STH-Comet."""
+    quando: str                          # instante do bloqueio (recvTime do STH)
+    motivo: str                          # SETPOINT_INVALIDO, AQUECIMENTO_RAPIDO, RESFRIAMENTO_RAPIDO...
+    direcao: Literal["calor", "frio"] | None = None   # o ataque esquentava ou esfriava
+    setpoint: float | None = None        # setpoint que o controlador mandou nesse instante
+    total: int | None = None             # contador de bloqueios do dispositivo (bq)
+
+
 class EventoCartao(BaseModel):
     """Uma liberação ou uma recusa de cartão NFC, do histórico do STH-Comet."""
     tipo: Literal["liberacao", "recusa"]

@@ -18,12 +18,13 @@ do STH são lidas e juntadas por instante, formando uma lista de eventos.
 import asyncio
 from datetime import datetime, timedelta
 
-from app.models.schemas import EventoCartao
+from app.models.schemas import AtaqueRegistrado, EventoCartao
 from app.services.device_registry import DeviceRegistry
 from app.services.fiware_client import FiwareClient
 from app.services.fiware_constants import ENTITY_TYPE
 from app.services.fiware_errors import FiwareNotFound
 from app.services.operadores import papel_de
+from app.services.perfis import FAIXAS
 from app.services.readings import to_float
 
 # Os atributos de um mesmo evento chegam na mesma notificação e têm o mesmo recvTime;
@@ -79,6 +80,58 @@ def juntar_eventos(tipo: str, contador: list[dict], quem: list[dict],
     return eventos
 
 
+# Motivos que indicam um ataque barrado (o que abre um bloqueio no firmware).
+MOTIVOS_DE_ATAQUE = ("SETPOINT_INVALIDO", "DEGELO_FORA_HORARIO", "DEGELO_LONGO",
+                     "AQUECIMENTO_RAPIDO", "RESFRIAMENTO_RAPIDO")
+
+
+def direcao_do_ataque(motivo: str, setpoint: float | None, perfil: str) -> str | None:
+    """"frio" ou "calor", com a mesma regra do firmware (bloqueioFrio em decisao.h).
+
+    Resfriamento rápido e setpoint abaixo do mínimo da faixa são ataques de frio; setpoint
+    acima do máximo, aquecimento rápido e degelo indevido são de calor. Setpoint sem valor
+    (ou dentro da faixa) não permite dizer.
+    """
+    if motivo == "RESFRIAMENTO_RAPIDO":
+        return "frio"
+    if motivo in ("AQUECIMENTO_RAPIDO", "DEGELO_FORA_HORARIO", "DEGELO_LONGO"):
+        return "calor"
+    if motivo == "SETPOINT_INVALIDO" and setpoint is not None and perfil in FAIXAS:
+        minimo, maximo = FAIXAS[perfil]
+        if setpoint < minimo:
+            return "frio"
+        if setpoint > maximo:
+            return "calor"
+    return None
+
+
+def juntar_ataques(contador: list[dict], motivo: list[dict], setpoint: list[dict],
+                   perfil: str) -> list[AtaqueRegistrado]:
+    """Monta os ataques a partir das séries do STH.
+
+    `blocks` só sobe quando um bloqueio começa, então cada ponto é um ataque; motivo e
+    setpoint são procurados no mesmo instante. Pontos sem motivo de ataque (o 0 da partida,
+    por exemplo) são descartados, e o mesmo contador não repete (uma subscription antiga
+    de `blocks` ainda pode existir na EC2).
+    """
+    vistos, ataques = set(), []
+    for ponto in contador:
+        instante = ponto.get("recvTime")
+        total = to_float(ponto.get("attrValue"))
+        razao = _mais_proximo(instante, motivo)
+        codigo = razao.get("attrValue") if razao else None
+        if codigo not in MOTIVOS_DE_ATAQUE or total in vistos:
+            continue
+        vistos.add(total)
+        ponto_sp = _mais_proximo(instante, setpoint)
+        valor_sp = to_float(ponto_sp.get("attrValue")) if ponto_sp else None
+        ataques.append(AtaqueRegistrado(
+            quando=instante, motivo=codigo, setpoint=valor_sp,
+            direcao=direcao_do_ataque(codigo, valor_sp, perfil),
+            total=None if total is None else int(total)))
+    return ataques
+
+
 class EventosService:
     """Lista os eventos de cartão de um C-Shield, do mais novo para o mais antigo."""
 
@@ -92,6 +145,17 @@ class EventosService:
             return await self._fiware.query_history(ENTITY_TYPE, entity_id, attr, last_n=last_n)
         except FiwareNotFound:
             return []
+
+    async def ataques(self, device_id: str, last_n: int = 20) -> list[AtaqueRegistrado]:
+        """Até `last_n` ataques mais recentes, do mais novo para o mais antigo."""
+        device = self._registry.get(device_id)
+        nomes = ("blocks", "reason", "setpoint")
+        series = dict(zip(nomes, await asyncio.gather(
+            *[self._serie(device.entity_id, nome, last_n) for nome in nomes])))
+        ataques = juntar_ataques(series["blocks"], series["reason"], series["setpoint"],
+                                 device.profile)
+        ataques.sort(key=lambda ataque: ataque.quando, reverse=True)
+        return ataques[:last_n]
 
     async def listar(self, device_id: str, last_n: int = 20) -> list[EventoCartao]:
         """Até `last_n` eventos mais recentes (liberações e recusas juntas)."""

@@ -12,7 +12,7 @@
 // Testes da lógica pura do dashboard: estados, locais, gráfico e cliente HTTP.
 import { describe, expect, it } from 'vitest'
 import { errorFromResponse } from '../api/client.js'
-import { ESTADOS, rotuloMotivo, rotuloRecusa, situacaoDoDispositivo } from './estados.js'
+import { DIRECAO_ATAQUE, ESTADOS, descreverAtaque, rotuloMotivo, rotuloRecusa, situacaoDoDispositivo } from './estados.js'
 import { dominioDoGrafico, pontosParaGrafico, rotuloTempo } from './grafico.js'
 import { LOCAIS, dispositivosPorLocal, locaisLivres } from './locais.js'
 
@@ -53,6 +53,26 @@ describe('rótulos em português', () => {
   })
 })
 
+describe('descreverAtaque', () => {
+  it('setpoint alterado mostra o valor e o lado da faixa', () => {
+    expect(descreverAtaque({ motivo: 'SETPOINT_INVALIDO', setpoint: 45, direcao: 'calor' })).toBe('Setpoint alterado para 45 °C (acima da faixa)')
+    expect(descreverAtaque({ motivo: 'SETPOINT_INVALIDO', setpoint: -5.5, direcao: 'frio' })).toBe('Setpoint alterado para -5,5 °C (abaixo da faixa)')
+    expect(descreverAtaque({ motivo: 'SETPOINT_INVALIDO', setpoint: null, direcao: null })).toBe('Setpoint alterado')
+  })
+  it('mudança de temperatura e degelo', () => {
+    expect(descreverAtaque({ motivo: 'AQUECIMENTO_RAPIDO' })).toBe('Temperatura subindo rápido demais')
+    expect(descreverAtaque({ motivo: 'RESFRIAMENTO_RAPIDO' })).toBe('Temperatura caindo rápido demais')
+    expect(descreverAtaque({ motivo: 'DEGELO_FORA_HORARIO' })).toBe('Degelo comandado fora do horário')
+    expect(descreverAtaque({ motivo: 'DEGELO_LONGO' })).toBe('Degelo ligado por tempo demais')
+  })
+  it('as três direções têm rótulo e cor', () => {
+    for (const d of Object.values(DIRECAO_ATAQUE)) {
+      expect(d.rotulo).toBeTruthy()
+      expect(d.cor).toMatch(/^var\(--color-/)
+    }
+  })
+})
+
 describe('locais', () => {
   it('são os cinco pontos do emulador do site', () => {
     expect(LOCAIS.map((l) => l.id)).toEqual([
@@ -73,6 +93,8 @@ describe('gráfico térmico', () => {
     expect(rotuloTempo(1000, 1000)).toBe('agora')
     expect(rotuloTempo(0, 45_000)).toBe('há 45 s')
     expect(rotuloTempo(0, 600_000)).toBe('há 10 min')
+    expect(rotuloTempo(0, 5 * 3_600_000)).toBe('há 5 h')
+    expect(rotuloTempo(0, 4 * 86_400_000)).toBe('há 4 d')
   })
   it('ordena do mais antigo ao mais novo e conta a partir do ponto mais novo', () => {
     const pontos = pontosParaGrafico([

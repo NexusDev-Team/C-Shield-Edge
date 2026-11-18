@@ -15,6 +15,7 @@ export const FLEET_POLL_MS = 5000       // mapa da frota
 export const LEITURA_POLL_MS = 5000     // temperatura atual, histórico e eventos de um C-Shield
 export const HEALTH_POLL_MS = 30000     // saúde da EC2
 
-// Quantos pontos do histórico térmico (STH) o gráfico pede, e quantos eventos de cartão a tabela.
+// Quantos pontos do histórico térmico (STH) o gráfico pede, quantos eventos de cartão e quantos ataques as tabelas.
 export const PONTOS_GRAFICO = 40
 export const EVENTOS_TABELA = 20
+export const ATAQUES_TABELA = 20

@@ -583,6 +583,48 @@
           }
         },
         {
+          "name": "Subscribe evento ataque (STH)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "fiware-service",
+                "value": "smart"
+              },
+              {
+                "key": "fiware-servicepath",
+                "value": "/"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://{{url}}:1026/v2/subscriptions",
+              "protocol": "http",
+              "host": [
+                "{{url}}"
+              ],
+              "port": "1026",
+              "path": [
+                "v2",
+                "subscriptions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"C-Shield STH evento ataque\",\n  \"subject\": {\n    \"entities\": [\n      {\n        \"id\": \"{{entity_id}}\",\n        \"type\": \"CShield\"\n      }\n    ],\n    \"condition\": {\n      \"attrs\": [\n        \"blocks\"\n      ]\n    }\n  },\n  \"notification\": {\n    \"http\": {\n      \"url\": \"{{sth_internal}}/notify\"\n    },\n    \"attrs\": [\n      \"blocks\",\n      \"reason\",\n      \"setpoint\"\n    ],\n    \"attrsFormat\": \"legacy\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Dispara pelo contador blocks (só sobe quando um bloqueio começa) e leva o motivo e o setpoint: é o histórico de ataques do dashboard."
+          }
+        },
+        {
           "name": "Subscribe evento liberacao (STH)",
           "request": {
             "method": "POST",
@@ -820,6 +862,129 @@
                 "{{entity_id}}",
                 "attributes",
                 "refusedBy"
+              ],
+              "query": [
+                {
+                  "key": "lastN",
+                  "value": "30"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Historico reason (lastN)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "fiware-service",
+                "value": "smart"
+              },
+              {
+                "key": "fiware-servicepath",
+                "value": "/"
+              }
+            ],
+            "url": {
+              "raw": "http://{{url}}:8666/STH/v1/contextEntities/type/CShield/id/{{entity_id}}/attributes/reason?lastN=30",
+              "protocol": "http",
+              "host": [
+                "{{url}}"
+              ],
+              "port": "8666",
+              "path": [
+                "STH",
+                "v1",
+                "contextEntities",
+                "type",
+                "CShield",
+                "id",
+                "{{entity_id}}",
+                "attributes",
+                "reason"
+              ],
+              "query": [
+                {
+                  "key": "lastN",
+                  "value": "30"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Historico setpoint (lastN)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "fiware-service",
+                "value": "smart"
+              },
+              {
+                "key": "fiware-servicepath",
+                "value": "/"
+              }
+            ],
+            "url": {
+              "raw": "http://{{url}}:8666/STH/v1/contextEntities/type/CShield/id/{{entity_id}}/attributes/setpoint?lastN=30",
+              "protocol": "http",
+              "host": [
+                "{{url}}"
+              ],
+              "port": "8666",
+              "path": [
+                "STH",
+                "v1",
+                "contextEntities",
+                "type",
+                "CShield",
+                "id",
+                "{{entity_id}}",
+                "attributes",
+                "setpoint"
+              ],
+              "query": [
+                {
+                  "key": "lastN",
+                  "value": "30"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Historico blocks (lastN)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "fiware-service",
+                "value": "smart"
+              },
+              {
+                "key": "fiware-servicepath",
+                "value": "/"
+              }
+            ],
+            "url": {
+              "raw": "http://{{url}}:8666/STH/v1/contextEntities/type/CShield/id/{{entity_id}}/attributes/blocks?lastN=30",
+              "protocol": "http",
+              "host": [
+                "{{url}}"
+              ],
+              "port": "8666",
+              "path": [
+                "STH",
+                "v1",
+                "contextEntities",
+                "type",
+                "CShield",
+                "id",
+                "{{entity_id}}",
+                "attributes",
+                "blocks"
               ],
               "query": [
                 {

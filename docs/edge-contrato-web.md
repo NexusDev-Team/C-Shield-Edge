@@ -44,6 +44,8 @@ Exemplo de resposta (Wokwi rodando, chave em ATAQUE):
 
 Atualização: o dispositivo publica a cada 5 s e **na hora** em toda mudança de estado e em todo cartão lido. Consulte o Orion a cada 2 ou 3 s.
 
+**Histórico de ataques.** Cada bloqueio novo faz `blocks` subir e carrega `reason` (o motivo) e `setpoint` (o que o controlador mandou). O STH-Comet grava os três numa só notificação por bloqueio (`GET /STH/v1/contextEntities/type/CShield/id/urn:ngsi-ld:CShield:001/attributes/reason?lastN=20`). Frio ou calor: `RESFRIAMENTO_RAPIDO` e setpoint abaixo da faixa do produto são frio; `AQUECIMENTO_RAPIDO`, degelo indevido e setpoint acima da faixa são calor.
+
 **Eventos de cartão.** `releasedBy`/`releaseCount` e `refusedBy`/`refusedReason`/`refusalCount` só vão no payload **no momento do evento**; no Orion ficam com o último valor. Para o **histórico** (quem liberou e quando), consulte o STH-Comet, que grava uma linha por evento: `GET /STH/v1/contextEntities/type/CShield/id/urn:ngsi-ld:CShield:001/attributes/releasedBy?lastN=20` (e `refusedBy`). Os contadores sempre mudam, então duas liberações seguidas do mesmo papel geram duas linhas.
 
 ## 2. Como o site lê o Orion

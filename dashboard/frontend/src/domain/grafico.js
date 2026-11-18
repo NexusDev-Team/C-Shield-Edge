@@ -14,12 +14,16 @@
  * testada em grafico.test.js.
  */
 
-// Rótulo do eixo X: "agora" para o ponto mais novo, "há N s" até 2 min, "há N min" depois.
+// Rótulo do eixo X: "agora" para o ponto mais novo, "há N s" até 2 min, "há N min" até 2 h,
+// "há N h" até 2 dias e "há N d" depois (a série do STH pode cobrir dias quando o aparelho para).
 export function rotuloTempo(instanteMs, referenciaMs) {
   const segundos = Math.max(0, Math.round((referenciaMs - instanteMs) / 1000))
   if (segundos < 5) return 'agora'
   if (segundos < 120) return `há ${segundos} s`
-  return `há ${Math.round(segundos / 60)} min`
+  const minutos = Math.round(segundos / 60)
+  if (minutos < 120) return `há ${minutos} min`
+  const horas = Math.round(minutos / 60)
+  return horas < 48 ? `há ${horas} h` : `há ${Math.round(horas / 24)} d`
 }
 
 // Pontos do backend ({ ts, value }) em { v, t }, do mais antigo ao mais novo. O rótulo conta a

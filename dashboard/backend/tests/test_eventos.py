@@ -12,7 +12,7 @@ import httpx
 import pytest
 import respx
 
-from app.services.eventos import juntar_eventos
+from app.services.eventos import direcao_do_ataque, juntar_ataques, juntar_eventos
 from app.services.operadores import papel_de
 
 pytestmark = pytest.mark.anyio
@@ -94,3 +94,50 @@ async def test_listar_sem_historico_no_sth_devolve_lista_vazia(eventos, cadastra
     cadastrar()
     respx.get(url__startswith=BASE_STH).mock(return_value=httpx.Response(404, json={}))
     assert await eventos.listar("cshield001") == []
+
+
+def test_direcao_do_ataque_segue_a_regra_do_firmware():
+    assert direcao_do_ataque("RESFRIAMENTO_RAPIDO", None, "VACINA") == "frio"
+    assert direcao_do_ataque("AQUECIMENTO_RAPIDO", None, "VACINA") == "calor"
+    assert direcao_do_ataque("DEGELO_FORA_HORARIO", None, "VACINA") == "calor"
+    assert direcao_do_ataque("SETPOINT_INVALIDO", 45.0, "VACINA") == "calor"    # acima de 8
+    assert direcao_do_ataque("SETPOINT_INVALIDO", -5.0, "VACINA") == "frio"     # abaixo de 2
+    assert direcao_do_ataque("SETPOINT_INVALIDO", -10.0, "CONGELADO") == "calor"  # acima de -18
+    assert direcao_do_ataque("SETPOINT_INVALIDO", None, "VACINA") is None
+
+
+def test_juntar_ataques_descarta_partida_e_duplicata_do_contador():
+    ataques = juntar_ataques(
+        contador=[_ponto("2026-11-18T12:00:00.000Z", 0),      # contador da partida, sem ataque
+                  _ponto("2026-11-18T12:10:00.000Z", 1),
+                  _ponto("2026-11-18T12:10:00.300Z", 1),      # subscription antiga repetindo
+                  _ponto("2026-11-18T12:20:00.000Z", 2)],
+        motivo=[_ponto("2026-11-18T12:00:00.000Z", "-"),
+                _ponto("2026-11-18T12:10:00.000Z", "SETPOINT_INVALIDO"),
+                _ponto("2026-11-18T12:20:00.000Z", "RESFRIAMENTO_RAPIDO")],
+        setpoint=[_ponto("2026-11-18T12:10:00.000Z", 45)],
+        perfil="VACINA")
+    assert [(a.total, a.motivo, a.direcao, a.setpoint) for a in ataques] == [
+        (1, "SETPOINT_INVALIDO", "calor", 45.0), (2, "RESFRIAMENTO_RAPIDO", "frio", None)]
+
+
+@respx.mock
+async def test_ataques_do_mais_novo_para_o_mais_antigo(eventos, cadastrar):
+    cadastrar()
+    respx.get(BASE_STH + "blocks").mock(return_value=_sth("blocks", [
+        _ponto("2026-11-18T12:10:00.000Z", 1), _ponto("2026-11-18T12:30:00.000Z", 2)]))
+    respx.get(BASE_STH + "reason").mock(return_value=_sth("reason", [
+        _ponto("2026-11-18T12:10:00.000Z", "SETPOINT_INVALIDO"),
+        _ponto("2026-11-18T12:30:00.000Z", "AQUECIMENTO_RAPIDO")]))
+    respx.get(BASE_STH + "setpoint").mock(return_value=_sth("setpoint", [
+        _ponto("2026-11-18T12:10:00.000Z", -8)]))
+    lista = await eventos.ataques("cshield001")
+    assert [(a.total, a.direcao) for a in lista] == [(2, "calor"), (1, "frio")]
+    assert lista[1].setpoint == -8.0
+
+
+@respx.mock
+async def test_ataques_sem_historico_no_sth(eventos, cadastrar):
+    cadastrar()
+    respx.get(url__startswith=BASE_STH).mock(return_value=httpx.Response(404, json={}))
+    assert await eventos.ataques("cshield001") == []

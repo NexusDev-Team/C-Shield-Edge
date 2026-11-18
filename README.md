@@ -244,6 +244,7 @@ Cada liberação ou recusa aparece no Serial com data e hora (`bloqueio LIBERADO
 | Tópico | `/TEF/cshield001/attrs` (único; nenhum de comando) |
 | Payload UltraLight | `t\|4.8\|h\|81\|l\|12\|sp\|5.0\|dg\|0\|st\|NORMAL\|mt\|-\|bq\|0\|ex\|0` |
 | Atributos no Orion | `temperature` · `humidity` · `luminosity` · `setpoint` · `defrost` · `state` · `reason` · `blocks` · `exposure` |
+| Ataque barrado (histórico) | A subscription dispara por `blocks`, que só sobe quando um bloqueio começa, e leva `reason` e `setpoint` junto. A direção (calor ou frio) o dashboard deduz como o firmware: setpoint abaixo da faixa e resfriamento rápido são frio; o resto é calor |
 | Eventos de cartão (só no momento do evento) | Liberação: `lb\|RT01\|nl\|3` → `releasedBy` · `releaseCount`. Recusa: `rj\|RT01\|rm\|TRAVA\|nr\|2` → `refusedBy` · `refusedReason` · `refusalCount` |
 
 <p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
@@ -295,7 +296,7 @@ A terceira camada: uma página que **lê** o FIWARE e mostra a frota. Fica em `d
 | Tela | O que mostra |
 | --- | --- |
 | **Mapa da frota** (`/`) | Os cinco pontos da cidade, com a temperatura e o estado reais de cada C-Shield cadastrado, a Central (FIWARE) e uma linha de dados só no sentido do aparelho para a central |
-| **Monitoramento** (`/dispositivo/<id>`) | Temperatura atual, histórico térmico (STH-Comet), umidade, porta, bloqueios, exposição e o **histórico de liberações**: quem encostou o cartão, quando e o que aconteceu |
+| **Monitoramento** (`/dispositivo/<id>`) | Temperatura atual, histórico térmico (STH-Comet), umidade, porta, bloqueios, exposição, o **histórico de ataques** (quando o C-Shield barrou uma ordem perigosa, se era de calor ou de frio e como foi feito: setpoint alterado, temperatura subindo ou caindo rápido, degelo indevido) e o **histórico de liberações** (quem encostou o cartão, quando e o que aconteceu) |
 | **C-Shields** (`/dispositivos`) | Cadastro e remoção. Cadastrar provisiona o device, a entidade e as subscriptions no FIWARE |
 | **Avançado** (`/avancado`) | IP da EC2 e saúde do Orion, do IoT Agent e do STH-Comet |
 

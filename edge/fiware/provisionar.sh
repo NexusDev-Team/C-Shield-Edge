@@ -46,7 +46,7 @@ ORION_URL="http://${FIWARE_HOST}:${ORION_PORT}"
 
 # Atributos do device: object_id curto (vai no payload UltraLight) -> nome longo (Orion/STH).
 # Os de telemetria e estado são os que vão para o histórico do STH-Comet (seção abaixo).
-ATRIBUTOS_STH=(temperature humidity luminosity state blocks exposure)
+ATRIBUTOS_STH=(temperature humidity luminosity state exposure)
 
 # Eventos de cartão NFC (liberação presencial). Cada evento publica quem foi, e um contador
 # que SEMPRE muda; por isso a subscription dispara pelo contador (condição) e leva junto os
@@ -54,7 +54,10 @@ ATRIBUTOS_STH=(temperature humidity luminosity state blocks exposure)
 # recusa, mesmo quando o mesmo papel libera duas vezes seguidas (o valor de releasedBy
 # repetido não contaria como mudança sozinho).
 #   formato: "descrição|atributo-condição|atributos-notificados (separados por espaço)"
+# O ataque (bloqueio novo) dispara pelo contador `blocks`, que só sobe quando um bloqueio começa,
+# e leva o motivo e o setpoint que o controlador mandou: é o histórico de ataques do dashboard.
 EVENTOS_STH=(
+  "ataque|blocks|blocks reason setpoint"
   "liberacao|releaseCount|releasedBy releaseCount"
   "recusa|refusalCount|refusedBy refusedReason refusalCount"
 )

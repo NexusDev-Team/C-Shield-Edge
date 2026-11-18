@@ -105,6 +105,9 @@ export const api = {
     return request(rotaDevice(deviceId, `/history?${query}`))
   },
 
+  /** Ataques barrados (bloqueios novos), do mais novo para o mais antigo. */
+  getAtaques: (deviceId, lastN = 20) => request(rotaDevice(deviceId, `/ataques?last_n=${lastN}`)),
+
   /** Liberações e recusas de cartão NFC, da mais nova para a mais antiga. */
   getEventos: (deviceId, lastN = 20) => request(rotaDevice(deviceId, `/eventos?last_n=${lastN}`)),
 }

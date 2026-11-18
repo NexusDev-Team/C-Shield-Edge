@@ -37,10 +37,11 @@ EVENT_ATTRS = (
 )
 # Atributos que ganham subscription própria para o STH-Comet guardar o histórico
 # (os mesmos de ATRIBUTOS_STH em provisionar.sh).
-ATRIBUTOS_HISTORICO = ("temperature", "humidity", "luminosity", "state", "blocks", "exposure")
+ATRIBUTOS_HISTORICO = ("temperature", "humidity", "luminosity", "state", "exposure")
 # Subscriptions de evento: o contador (sempre muda) dispara e leva o evento inteiro.
 # nome -> (atributo que dispara, atributos notificados)
 EVENTOS_HISTORICO = {
+    "ataque": ("blocks", ("blocks", "reason", "setpoint")),
     "liberacao": ("releaseCount", ("releasedBy", "releaseCount")),
     "recusa": ("refusalCount", ("refusedBy", "refusedReason", "refusalCount")),
 }

@@ -65,12 +65,15 @@ async def test_create_provisiona_sem_comandos_e_assina_o_historico(registry):
             "refusedReason", "refusalCount"} <= nomes
 
     subs = [json.loads(c.request.content) for c in rotas["criar_sub"].calls]
-    assert len(subs) == 8                                   # 6 de telemetria + 2 de evento
+    assert len(subs) == 8                                   # 5 de telemetria + 3 de evento (ataque, liberação, recusa)
     por_descricao = {s["description"]: s for s in subs}
     liberacao = por_descricao["C-Shield STH evento liberacao"]
     assert liberacao["subject"]["condition"]["attrs"] == ["releaseCount"]
     assert liberacao["notification"]["attrs"] == ["releasedBy", "releaseCount"]
     assert liberacao["notification"]["http"]["url"] == "http://sth-comet:8666/notify"
+    ataque = por_descricao["C-Shield STH evento ataque"]
+    assert ataque["subject"]["condition"]["attrs"] == ["blocks"]
+    assert ataque["notification"]["attrs"] == ["blocks", "reason", "setpoint"]
 
 
 @respx.mock
