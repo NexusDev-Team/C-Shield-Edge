@@ -151,7 +151,13 @@ Em São Paulo, os mesmos equipamentos existem em salas de vacina de UBS, hemocen
 [![Docker](https://img.shields.io/badge/Docker-0B1F3A?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 [![AWS EC2](https://img.shields.io/badge/AWS_EC2-00B8D9?style=for-the-badge&logo=amazonec2&logoColor=0B1F3A)](https://aws.amazon.com/ec2/)
 
-Bibliotecas do firmware: `PubSubClient`, `DHT sensor library`, `Adafruit Unified Sensor` e `LiquidCrystal I2C`. A lógica de decisão (`decisao.h`) não usa Arduino e é testada com `g++`.
+**Dashboard**
+
+[![Python](https://img.shields.io/badge/FastAPI-0B1F3A?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React_+_Vite-2563EB?style=for-the-badge&logo=react&logoColor=white)](https://react.dev/)
+[![Tailwind](https://img.shields.io/badge/Tailwind_CSS-00B8D9?style=for-the-badge&logo=tailwindcss&logoColor=0B1F3A)](https://tailwindcss.com/)
+
+Bibliotecas do firmware: `PubSubClient`, `DHT sensor library`, `Adafruit Unified Sensor`, `LiquidCrystal I2C` e `MFRC522` (leitor de cartão). A lógica de decisão (`decisao.h`) não usa Arduino e é testada com `g++`.
 
 <p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
 
@@ -160,16 +166,17 @@ Bibliotecas do firmware: `PubSubClient`, `DHT sensor library`, `Adafruit Unified
 <!-- ARQUITETURA -->
 ## Arquitetura
 
-O Edge cobre as três primeiras camadas; o site (outro repositório) fecha a quarta:
+O Edge cobre as três primeiras camadas; o dashboard (neste repositório, em `dashboard/`) e o site (outro repositório) fecham a quarta:
 
 ```
 [1] Dispositivo (Edge)   ESP32 + DHT22 + LDR + 2 relés + LED RGB + buzzer + LCD 16x2 I2C
 [2] Comunicação          Wi-Fi -> Mosquitto MQTT (1883), payload UltraLight 2.0, SÓ publicação
 [3] Middleware IoT       IoT Agent MQTT (4041) -> Orion (1026) + STH-Comet (8666)
-[4] Apresentação         Site c-shield-web: /simulador-real (dados reais) e /emulador (sem ESP32)
+[4] Apresentação         Dashboard: mapa da frota, monitoramento, histórico de ataques e de liberações (dados reais)
+                         Site c-shield-web: /emulador (sem ESP32)
 ```
 
-**Fluxo de telemetria:** sensor → ESP32 → MQTT → IoT Agent → Orion → site. **Não existe fluxo de comando:** nada chega ao ESP32 pela rede.
+**Fluxo de telemetria:** sensor → ESP32 → MQTT → IoT Agent → Orion e STH-Comet → backend do dashboard → navegador. **Não existe fluxo de comando:** nada chega ao ESP32 pela rede.
 
 <p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
 
@@ -384,8 +391,11 @@ dashboard/
 - [x] Ataque de calor e de frio, com resposta nos relés por direção
 - [x] Circuito no Wokwi e simulação pública
 - [x] Provisionamento no FIWARE e teste ponta a ponta
+- [x] Liberação do bloqueio por cartão NFC, com registro de quem liberou (sugestão do professor)
+- [x] Dashboard ligado ao FIWARE: mapa da frota, monitoramento, histórico de ataques e de liberações
+- [ ] Publicar o dashboard no Vercel (backend no notebook, com túnel da Cloudflare)
 - [ ] Vídeo de apresentação
-- [ ] Site `c-shield-web`: `/simulador-real` e `/emulador`
+- [ ] Site `c-shield-web`: `/emulador`
 - [ ] Versão em JavaScript da lógica de decisão, para o emulador do site
 - [ ] Terceiro relé, para o C-Shield aquecer sozinho num ataque de frio
 - [ ] Calibração das taxas de aquecimento e de resfriamento com a DPS
