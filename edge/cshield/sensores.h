@@ -16,7 +16,6 @@
  *   LDR           luminosidade (porta aberta)
  *   chave GPIO 32 setpoint observado: NORMAL ou ATAQUE (só no Wokwi)
  *   GPIO 18       degelo comandado pelo controlador
- *   botão         liberação presencial (segurar por LIBERACAO_MS)
  *
  * Aqui só se lê e se valida. Quem decide é decisao.h.
  */
@@ -66,46 +65,6 @@ static float setpointObservado() {
 // true quando o controlador está mandando degelo (GPIO 18 em nível alto).
 static bool degeloComandado() { return digitalRead(PIN_DEGELO) == HIGH; }
 
-// --- Botão de liberação presencial: debounce + contagem de LIBERACAO_MS ---
-static bool          botaoEstavel = false;   // estado já filtrado (true = apertado)
-static bool          botaoBruto = false;     // última leitura crua
-static unsigned long botaoMudouEm = 0;       // quando a leitura crua mudou
-static unsigned long botaoApertadoEm = 0;    // quando o estado estável virou "apertado"
-static bool          liberacaoPendente = false; // 3 s completos, esperando o próximo ciclo
-static int           botaoProgresso = 0;     // 0 a 100 enquanto segura
-
-// Chamar a CADA volta do loop(): a contagem de 3 s precisa de resolução fina, ao
-// contrário da decisão, que roda a cada 2 s.
-static void atualizarBotao(unsigned long agoraMs) {
-  bool bruto = (digitalRead(PIN_BOTAO) == LOW);   // INPUT_PULLUP: apertado = LOW
-  if (bruto != botaoBruto) { botaoBruto = bruto; botaoMudouEm = agoraMs; }
-
-  // Debounce: só aceita a mudança depois de DEBOUNCE_MS estável.
-  if (bruto != botaoEstavel && (agoraMs - botaoMudouEm) >= DEBOUNCE_MS) {
-    botaoEstavel = bruto;
-    if (botaoEstavel) botaoApertadoEm = agoraMs;
-  }
-
-  if (botaoEstavel) {
-    unsigned long segurado = agoraMs - botaoApertadoEm;
-    botaoProgresso = (int)min(100UL, segurado * 100UL / LIBERACAO_MS);
-    if (segurado >= LIBERACAO_MS) liberacaoPendente = true;
-  } else {
-    botaoProgresso = 0;
-  }
-}
-
-// Progresso da liberação em % (0 quando o botão não está apertado).
-static int botaoProgressoPct() { return botaoProgresso; }
-
-// Entrega (e limpa) a liberação concluída. Chamado uma vez por ciclo de decisão.
-static bool botaoConsumirLiberacao() {
-  bool r = liberacaoPendente;
-  liberacaoPendente = false;
-  return r;
-}
-
-// Liga os sensores e as entradas. O botão usa o pull-up interno.
 // true quando a chave do controlador está em NORMAL (ventoinha de refrigeração permitida).
 // Só existe no Wokwi; na maquete (TEM_POT_SETPOINT = 0) a ventoinha do controlador é a real.
 static bool chaveControladorEmNormal() {
@@ -122,7 +81,6 @@ static void iniciarSensores() {
   // em vez de ler ruído e gerar um bloqueio fantasma.
   pinMode(PIN_DEGELO, INPUT_PULLDOWN);
   pinMode(PIN_CHAVE_SP, INPUT);
-  pinMode(PIN_BOTAO, INPUT_PULLUP);
 }
 
 static unsigned long ultimaLeituraMs = 0;
@@ -130,7 +88,7 @@ static bool          jaLeu = false;
 
 // A cada PERIODO_LEITURA_MS monta uma Leitura nova e devolve true. Entre um ciclo e
 // outro devolve false sem tocar na saída. A hora e a liberação são preenchidas depois,
-// pelo cshield.ino (vêm da rede e do botão).
+// pelo cshield.ino (vêm da rede e do leitor de cartão).
 static bool lerSensores(unsigned long agoraMs, Leitura& saida) {
   if (jaLeu && (agoraMs - ultimaLeituraMs) < PERIODO_LEITURA_MS) return false;
   jaLeu = true;
