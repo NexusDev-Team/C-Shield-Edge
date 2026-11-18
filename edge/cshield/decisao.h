@@ -55,7 +55,7 @@ struct Leitura {
   bool  degelo;       // degelo comandado pelo controlador
   bool  horaValida;   // hora do NTP disponível
   int   hora;         // 0..23, só vale se horaValida
-  bool  liberacao;    // botão segurado por LIBERACAO_MS (calculado em sensores.h)
+  bool  liberacao;    // cartão autorizado apresentado (calculado em cartao.h)
 };
 
 // Memória entre ciclos. Zere com iniciarContexto().
@@ -88,7 +88,7 @@ struct Decisao {
   bool   novoBloqueio;     // true só no ciclo em que um bloqueio começou (gera evento)
   bool   mudancaIgnorada;  // true quando a trava descartou uma ordem do controlador
   bool   liberou;          // true no ciclo em que a liberação presencial foi aceita
-  bool   liberacaoRecusada;// true quando o botão foi segurado mas a trava mínima não acabou
+  bool   liberacaoRecusada;// true quando um cartão autorizado foi apresentado mas a trava mínima não acabou
   bool   bloqueado;        // o bloqueio está ativo (mesmo que o estado mostrado seja CRITICO)
   bool   alarme;           // o apito deve tocar: bloqueio ou crítico com a temperatura ainda fora da faixa
   float  taxaCPorMin;      // para a linha do Serial

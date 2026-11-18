@@ -56,7 +56,13 @@ const int PIN_LDR       = 34;  // LDR (saída analógica): porta aberta
 const int PIN_LED_VENT_REFRIG = 16; // LED verde (só Wokwi): ventoinha de refrigeração do controlador, simulada
 const int PIN_CHAVE_SP  = 32;  // chave NORMAL/ATAQUE (só Wokwi): setpoint do controlador
 const int PIN_DEGELO    = 18;  // fio do controlador (maquete): degelo comandado; sem nada ligado fica em LOW
-const int PIN_BOTAO     = 19;  // botão de liberação presencial (INPUT_PULLUP)
+// Leitor de cartão NFC/RFID MFRC522 (liberação presencial). Usa o SPI "HSPI" com pinos próprios,
+// porque o SPI padrão (18, 19, 23, 5) colidiria com o relé 1 e o buzzer.
+const int PIN_RFID_SCK  = 14;  // clock do SPI
+const int PIN_RFID_MISO = 19;  // dados do leitor para o ESP32 (pino que era do antigo botão)
+const int PIN_RFID_MOSI = 13;  // dados do ESP32 para o leitor
+const int PIN_RFID_SS   = 15;  // seleção do leitor (SDA no módulo)
+const int PIN_RFID_RST  = 17;  // reset do leitor (TX2 no devkit)
 const int PIN_RELE_AQUEC = 23; // relé 1, contato NF: corta o aquecedor/degelo
 const int PIN_RELE_VENT = 33;  // relé 2, contato NA: liga a ventoinha de emergência
 const int PIN_LED_R     = 25;  // LED RGB, canal vermelho (220 ohms)
@@ -160,7 +166,7 @@ const int HORA_DEGELO_2 = 18;
 // Cada janela dura 1 hora (06:00 a 07:00 e 18:00 a 19:00).
 const int JANELA_DEGELO_H = 1;
 
-// Trava mínima de bloqueio: o botão de liberação só vale depois dela. 30 min no uso real;
+// Trava mínima de bloqueio: a liberação por cartão só vale depois dela. 30 min no uso real;
 // 60 s no modo demonstração, para caber no vídeo de 7 min.
 #if MODO_DEMO
 const unsigned long TRAVA_MS = 60UL * 1000UL;
@@ -168,11 +174,28 @@ const unsigned long TRAVA_MS = 60UL * 1000UL;
 const unsigned long TRAVA_MS = 30UL * 60UL * 1000UL;
 #endif
 
-// Segurar o botão por 3 s evita liberação por toque acidental.
-const unsigned long LIBERACAO_MS = 3000;
+// Cartões autorizados a liberar o bloqueio. Cada cartão identifica um PAPEL (não uma pessoa),
+// e a liberação fica registrada com o código do papel no Serial e no FIWARE (histórico).
+// Os UIDs são os dos cartões prontos da peça MFRC522 do Wokwi; no físico, troque pelos
+// UIDs dos cartões reais. O UID é sempre em maiúsculas, bytes em hexadecimal separados por ":".
+struct Operador {
+  const char* uid;     // UID do cartão (4 bytes MIFARE Classic ou 7 bytes Ultralight)
+  const char* codigo;  // código curto do papel, publicado no FIWARE (releasedBy)
+  const char* papel;   // nome do papel mostrado no LCD (no máximo 16 caracteres)
+};
 
-// Debounce do botão: ignora contatos que oscilam por menos de 50 ms.
-const unsigned long DEBOUNCE_MS = 50;
+static const Operador OPERADORES[] = {
+  { "01:02:03:04",          "RT01",  "Resp. tecnico" },  // Wokwi: cartão azul
+  { "11:22:33:44",          "ENF01", "Enfermagem"    },  // Wokwi: cartão verde
+  { "55:66:77:88",          "MAN01", "Manutencao"    },  // Wokwi: cartão amarelo
+  { "04:11:22:33:44:55:66", "SUP01", "Supervisao"    },  // Wokwi: tag NFC (7 bytes)
+  { "C0:FF:EE:99",          "GER01", "Gerencia"      },  // Wokwi: chaveiro
+};                                                         // O cartão vermelho (AA:BB:CC:DD) fica de fora de propósito: demonstra a recusa.
+static const int N_OPERADORES = sizeof(OPERADORES) / sizeof(OPERADORES[0]);
+
+// Mesmo cartão encostado de novo dentro deste prazo é ignorado: o leitor relê o cartão
+// várias vezes por segundo enquanto ele está perto, e isso não pode virar várias liberações.
+const unsigned long CARTAO_ANTIREPIQUE_MS = 1500;
 
 // ---------------------------------------------------------------------------
 // Modelo térmico da demonstração (simulacao.h)
