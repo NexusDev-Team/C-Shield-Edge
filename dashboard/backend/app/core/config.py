@@ -1,0 +1,133 @@
+# C-Shield — Dashboard (terceira camada: lê o FIWARE)
+# GS 2026.2 "CitizenTech" · Edge Computing & Computer Systems · FIAP · Prof. Dr. Fábio H. Cabrini
+# Equipe Nexus Vision. Integrantes:
+#   Isac Nilton Fernandes de Oliveira — RM573282
+#   João Benedito de Oliveira Simplício — RM570206
+#   Leonardo Formigari — RM573291
+#   Luis Fernando — RM570959
+#   Nicolas Cinel — RM572940
+
+"""
+Configuração do backend em dois níveis.
+
+- Settings: valores lidos do .env (ou do ambiente) na partida. São os defaults
+  do projeto e incluem o IP elástico da EC2 (FIWARE_HOST).
+- ConfigStore: configuração de runtime que o usuário troca pelo painel
+  (IP, portas, intervalos). Fica salva no SQLite e prevalece sobre o .env,
+  inclusive depois de reiniciar o backend.
+"""
+import json
+import os
+from dataclasses import dataclass
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+from app.core.db import Database
+from app.models.schemas import ConfigUpdate, RuntimeConfig, normalize_host
+
+# Pasta backend/: âncora do .env e do banco, para não depender de onde o
+# comando foi executado (uvicorn na raiz, pytest em backend/, etc.)
+BACKEND_DIR = Path(__file__).resolve().parents[2]
+
+
+@dataclass(frozen=True)
+class Settings:
+    """Configuração fixa da partida. Os defaults valem quando o .env não informa."""
+    fiware_host: str = ""
+    orion_port: int = 1026
+    iota_port: int = 4041
+    sth_port: int = 8666
+    fiware_service: str = "smart"
+    fiware_servicepath: str = "/"
+    fiware_apikey: str = "TEF"
+    sth_internal_url: str = "http://sth-comet:8666"
+    poll_seconds: int = 5
+    offline_seconds: int = 30
+    http_timeout_seconds: float = 5.0
+    database_path: str = "cshield.db"
+    cors_origins: tuple[str, ...] = ("http://localhost:5173",)
+    # Poller em fundo: só load_settings (produção) liga
+    run_background: bool = False
+
+
+def _env(nome: str, padrao):
+    """Lê uma variável de ambiente; ausente ou em branco devolve o padrão."""
+    valor = os.environ.get(nome, "").strip()
+    return valor if valor else padrao
+
+
+def _resolve_db_path(valor: str) -> str:
+    """Caminho relativo do banco vale a partir de backend/; absoluto fica como está."""
+    caminho = Path(valor)
+    return str(caminho if caminho.is_absolute() else BACKEND_DIR / caminho)
+
+
+def load_settings(env_file: str | None = str(BACKEND_DIR / ".env")) -> Settings:
+    """Monta o Settings a partir do .env e do ambiente.
+
+    Variáveis já definidas no ambiente têm prioridade sobre o arquivo.
+    O .env padrão é o de backend/. `env_file=None` ignora o arquivo
+    (usado nos testes). Liga o poller em fundo (run_background), que fica
+    desligado quando os testes criam Settings direto.
+    """
+    if env_file:
+        load_dotenv(env_file, override=False)
+    p = Settings()
+    origens = _env("CORS_ORIGINS", ",".join(p.cors_origins))
+    return Settings(
+        fiware_host=normalize_host(_env("FIWARE_HOST", p.fiware_host)),
+        orion_port=int(_env("ORION_PORT", p.orion_port)),
+        iota_port=int(_env("IOTA_PORT", p.iota_port)),
+        sth_port=int(_env("STH_PORT", p.sth_port)),
+        fiware_service=_env("FIWARE_SERVICE", p.fiware_service),
+        fiware_servicepath=_env("FIWARE_SERVICEPATH", p.fiware_servicepath),
+        fiware_apikey=_env("FIWARE_APIKEY", p.fiware_apikey),
+        sth_internal_url=_env("STH_INTERNAL_URL", p.sth_internal_url).rstrip("/"),
+        poll_seconds=int(_env("POLL_SECONDS", p.poll_seconds)),
+        offline_seconds=int(_env("OFFLINE_SECONDS", p.offline_seconds)),
+        http_timeout_seconds=float(_env("HTTP_TIMEOUT_SECONDS", p.http_timeout_seconds)),
+        database_path=_resolve_db_path(_env("DATABASE_PATH", p.database_path)),
+        cors_origins=tuple(o.strip() for o in origens.split(",") if o.strip()),
+        run_background=True,
+    )
+
+
+class ConfigStore:
+    """Configuração de runtime: defaults do Settings + alterações salvas no SQLite."""
+
+    def __init__(self, conn: Database, settings: Settings):
+        self._conn = conn
+        self._settings = settings
+
+    def _defaults(self) -> dict:
+        """Valores de partida, vindos do .env."""
+        s = self._settings
+        return {
+            "ec2_ip": s.fiware_host,
+            "orion_port": s.orion_port,
+            "iota_port": s.iota_port,
+            "sth_port": s.sth_port,
+            "poll_seconds": s.poll_seconds,
+            "offline_seconds": s.offline_seconds,
+        }
+
+    def get(self) -> RuntimeConfig:
+        """Devolve a configuração atual: defaults com os valores salvos por cima."""
+        valores = self._defaults()
+        for linha in self._conn.execute("SELECT key, value FROM config"):
+            if linha["key"] in valores:
+                valores[linha["key"]] = json.loads(linha["value"])
+        return RuntimeConfig(**valores)
+
+    def update(self, changes: ConfigUpdate) -> RuntimeConfig:
+        """Grava só os campos enviados e devolve a configuração completa."""
+        dados = changes.model_dump(exclude_none=True)
+        with self._conn:
+            for chave, valor in dados.items():
+                self._conn.execute(
+                    "INSERT INTO config (key, value) VALUES (?, ?) "
+                    "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+                    (chave, json.dumps(valor)),
+                )
+        return self.get()

@@ -9,3 +9,13 @@ t18-resultado.txt
 
 # Resumo temporário para o planejamento geral (apagar depois)
 RESUMO-EDGE-PARA-PLANNER.md
+
+# Dashboard: ambiente virtual, banco local e segredos
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.db
+.env
+node_modules/
+dist/
