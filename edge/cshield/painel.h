@@ -145,10 +145,17 @@ static void mostrarLiberadoPor(const char* papel) {
 }
 
 // Cartão lido, mas a liberação não aconteceu. `motivo` é o texto de motivoRecusa() ou
-// "NAO_CADASTRADO"; aqui vira uma mensagem curta de até 16 colunas.
-static void mostrarCartaoRecusado(const char* motivo) {
+// "NAO_CADASTRADO"; aqui vira uma mensagem curta de até 16 colunas. Na recusa por trava, a
+// linha 2 diz quanto falta ("Faltam 45s"), para não parecer que a trava nunca acaba.
+static void mostrarCartaoRecusado(const char* motivo, unsigned long travaRestanteMs) {
+  char faltam[LCD_COLUNAS + 1];
   const char* texto = "Recusado";
-  if (strcmp(motivo, "TRAVA") == 0)               texto = "Trava ativa";
+  if (strcmp(motivo, "TRAVA") == 0) {
+    unsigned long s = (travaRestanteMs + 999UL) / 1000UL;   // arredonda para cima: nunca mostra 0s com trava ativa
+    if (s >= 100) snprintf(faltam, sizeof(faltam), "Faltam %lum", s / 60UL);
+    else          snprintf(faltam, sizeof(faltam), "Faltam %lus", s);
+    texto = faltam;
+  }
   else if (strcmp(motivo, "ORDEM") == 0)          texto = "Ordem invalida";
   else if (strcmp(motivo, "TEMPERATURA") == 0)    texto = "Temp. fora faixa";
   else if (strcmp(motivo, "NAO_CADASTRADO") == 0) texto = "Nao cadastrado";

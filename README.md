@@ -229,7 +229,7 @@ Cada cartão identifica um **papel**, não uma pessoa. A tabela fica em `OPERADO
 | Key Fob (chaveiro) | `C0:FF:EE:99` | `GER01` | Gerencia |
 | Vermelho | `AA:BB:CC:DD` | não cadastrado | Recusado (`NAO_CADASTRADO`) |
 
-Motivos de recusa registrados: `TRAVA` (a trava mínima ainda não acabou), `ORDEM` (o controlador ainda manda uma ordem inválida), `TEMPERATURA` (a temperatura segue além da tolerância) e `NAO_CADASTRADO` (cartão fora da tabela). Cartão cadastrado sem bloqueio ativo só mostra `Sem bloqueio` e não gera evento.
+Motivos de recusa registrados: `TRAVA` (a trava mínima ainda não acabou), `ORDEM` (o controlador ainda manda uma ordem inválida), `TEMPERATURA` (a temperatura segue além da tolerância) e `NAO_CADASTRADO` (cartão fora da tabela). Na recusa por trava o LCD mostra quanto falta (`Faltam 45s`). Atenção no Wokwi: a trava conta no tempo da **simulação**, que costuma andar mais devagar que o relógio real, então 60 s de trava podem levar vários minutos de relógio. Se a chave do controlador ainda estiver em ATAQUE ao liberar, o bloqueio recomeça com trava nova (`ORDEM`): volte a chave para NORMAL antes de encostar o cartão. Cartão cadastrado sem bloqueio ativo só mostra `Sem bloqueio` e não gera evento.
 
 Cada liberação ou recusa aparece no Serial com data e hora (`bloqueio LIBERADO por RT01 (Resp. tecnico)`) e é publicada **uma vez**, no momento do evento, para formar o histórico no FIWARE. Ler o cartão não é receber um comando: o leitor é entrada local, e o firmware continua sem `subscribe`, callback, atualização remota ou servidor.
 

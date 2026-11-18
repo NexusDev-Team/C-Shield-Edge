@@ -52,6 +52,7 @@ static unsigned long recusadoAteMs = 0;  // até quando o LCD mostra "Cartao rec
 static unsigned long semBloqueioAteMs = 0; // até quando o LCD mostra "Sem bloqueio" (cartão sem bloqueio ativo)
 static char          papelLiberou[LCD_COLUNAS + 1] = "";  // papel mostrado em "LIBERADO POR"
 static char          motivoRecusaLcd[16] = "";            // motivo mostrado em "Cartao recusado"
+static unsigned long travaRecusaMs = 0;                   // quanto faltava da trava na recusa (LCD)
 
 // Imprime uma linha por ciclo de decisão, com os mesmos nomes do payload.
 static void imprimirSerial() {
@@ -79,7 +80,14 @@ static void registrarRecusa(const char* quem, const char* motivo, unsigned long 
   horaTexto(hora, sizeof(hora));
   totalRecusas++;
   Serial.printf("[%s] %s cartao RECUSADO (%s): %s\n", ID_DEVICE, hora, motivo, quem);
+  if (strcmp(motivo, "TRAVA") == 0)
+    Serial.printf("[%s] faltam %lus da trava minima (conta no tempo da simulacao, que no Wokwi pode andar devagar)\n",
+                  ID_DEVICE, (decisao.travaRestanteMs + 999UL) / 1000UL);
+  if (strcmp(motivo, "ORDEM") == 0)
+    Serial.printf("[%s] o controlador ainda manda ordem invalida: o bloqueio recomecou com trava nova. Volte a chave para NORMAL antes de liberar\n",
+                  ID_DEVICE);
   snprintf(motivoRecusaLcd, sizeof(motivoRecusaLcd), "%s", motivo);
+  travaRecusaMs = decisao.travaRestanteMs;
   recusadoAteMs = agora + LIBERADO_TELA_MS;
   montarSufixoRecusa(sufixoEvento, sizeof(sufixoEvento), quem, motivo, totalRecusas);
   eventoPendente = true;
@@ -182,7 +190,7 @@ void loop() {
   } else if (agora < liberadoAteMs) {
     mostrarLiberadoPor(papelLiberou);       // diz QUEM liberou
   } else if (agora < recusadoAteMs) {
-    mostrarCartaoRecusado(motivoRecusaLcd); // diz por que não liberou
+    mostrarCartaoRecusado(motivoRecusaLcd, travaRecusaMs); // diz por que não liberou (e quanto falta da trava)
   } else if (agora < semBloqueioAteMs) {
     mostrarSemBloqueio();                   // o cartão foi lido, mas não há bloqueio para liberar
   } else {
