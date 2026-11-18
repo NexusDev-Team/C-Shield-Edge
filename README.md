@@ -23,10 +23,6 @@
   </p>
 
   <p>
-    <a href="https://github.com/NexusDev-Team/C-Shield-Edge/issues">Reportar problema</a>
-  </p>
-
-  <p>
     <img src="https://img.shields.io/badge/FIAP-Global_Solution_2026.2-2563EB?style=flat-square" alt="FIAP Global Solution 2026.2">
     <img src="https://img.shields.io/badge/CitizenTech-Edge_Computing-0B1F3A?style=flat-square" alt="CitizenTech Edge Computing">
   </p>
