@@ -19,7 +19,7 @@
     <a href="https://wokwi.com/projects/480328417992209409"><img src="https://img.shields.io/badge/%F0%9F%9B%A1%EF%B8%8F_SIMULA%C3%87%C3%83O_NO_WOKWI-2563EB?style=for-the-badge&logo=arduino&logoColor=white" alt="Simulação no Wokwi"></a>
     <a href="https://c-shield-eight.vercel.app"><img src="https://img.shields.io/badge/site-cshield-blue?style=for-the-badge" alt="Site do C-Shield"></a>
     <a href="docs/edge-testes-estados.md"><img src="https://img.shields.io/badge/%F0%9F%A7%AA_TESTES_DOS_ESTADOS-00B8D9?style=for-the-badge&logo=readthedocs&logoColor=0B1F3A" alt="Testes dos estados"></a>
-    <a href="#"><img src="https://img.shields.io/badge/%E2%96%B6%EF%B8%8F_V%C3%8DDEO_NO_YOUTUBE-34D399?style=for-the-badge&logo=youtube&logoColor=0B1F3A" alt="Vídeo no YouTube"></a>
+    <a href="https://youtu.be/wtH8lZoWTVg?si=_IL0-rrx07Qbg9rb"><img src="https://img.shields.io/badge/%E2%96%B6%EF%B8%8F_V%C3%8DDEO_NO_YOUTUBE-34D399?style=for-the-badge&logo=youtube&logoColor=0B1F3A" alt="Vídeo no YouTube"></a>
   </p>
 
   <p>
